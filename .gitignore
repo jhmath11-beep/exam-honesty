@@ -1,0 +1,4 @@
+# 학교 원문(한글 파일)은 저장소에 올리지 않는다
+*.hwpx
+*.hwp
+.playwright-mcp/
