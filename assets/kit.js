@@ -182,9 +182,14 @@ const K = (() => {
     const knot = tie ? `<path d="M-7-160H7L10-150 4-112 0-104-4-112-10-150Z" fill="${rb}" ${ol(2.5)}/>`
       : `<path d="M0-156L-18-167V-145ZM0-156L18-167V-145Z" fill="${rb}" ${ol(2.5)}/><circle cy="-156" r="5" fill="${rb}" ${ol(2.5)}/>`;
     const p = persp;
+    // 손 + 쥔 펜(쓰는 손). 2단계 새 팔 묶음에서 쓴다
+    const wh = (hx, hy) => `<g class="k-wh">${handC(hx, hy)}<path d="M${hx + 2} ${hy - 4}l28-56" stroke="#2b4fa8" stroke-width="9"/></g>`;
+    const arm = (cls, body) => `<g class="k-arm ${cls}" stroke-linecap="round" fill="none">${body}</g>`;
+    const omrX = c => -44 + c * 20, omrY = r => -19 + r * 11;
     return `<g id="${id}" class="kid" transform="translate(${x} ${y}) scale(${s})" style="--blink:${blink}s"><g class="k-in">
+      <g class="k-body">
       ${back}
-      <rect x="-14" y="-204" width="28" height="44" fill="${sk}" ${ol(3)}/><rect x="-12" y="-200" width="24" height="12" ${SHADE}/>
+      <rect x="-14" y="-230" width="28" height="70" fill="${sk}" ${ol(3)}/><rect x="-12" y="-200" width="24" height="12" ${SHADE}/>
       ${shape('M-104-30C-112-112-100-160-56-168L56-168C100-160 112-112 104-30Z', jk, 'M60-167C100-158 112-112 104-30H70C80-90 78-140 60-167Z')}
       <path d="M-30-168L0-112 30-168Z" fill="${wt}" ${ol(3)}/><path d="M-44-166L-10-116M44-166L10-116" stroke="${OL}" stroke-width="2.5" opacity=".5"/>
       ${knot}
@@ -192,6 +197,7 @@ const K = (() => {
         <circle cx="-76" cy="-262" r="13" fill="${sk}" ${ol()}/><circle cx="76" cy="-262" r="13" fill="${sk}" ${ol()}/>
         <circle cy="-270" r="77" fill="${sk}"/><path d="M38.5-336.7A77 77 0 0 1 38.5-203.3A100 100 0 0 0 38.5-336.7Z" fill="#1a2340" opacity=".12"/>
         <circle cy="-270" r="77" fill="none" ${ol()}/>
+        <ellipse class="k-uglow" cy="-215" rx="58" ry="34" fill="#9fc6c9"/>
         ${shape('M-80-274A80 80 0 0 1 80-274Q60-300 26-296Q-2-322-38-298Q-64-296-80-274Z', hr, 'M44-341A80 80 0 0 1 80-274Q66-292 50-297Z')}
         <g class="k-brows" stroke="${INK}" stroke-width="4" stroke-linecap="round"><path class="k-brow-l" d="M-40-292H-18"/><path class="k-brow-r" d="M18-292H40"/></g>
         <g class="k-eyes"><g class="k-pupils"><ellipse cx="-27" cy="-262" rx="7.5" ry="10.5" fill="${INK}"/><ellipse cx="27" cy="-262" rx="7.5" ry="10.5" fill="${INK}"/>
@@ -203,7 +209,8 @@ const K = (() => {
         <ellipse class="m m-o" cy="-218" rx="9" ry="11" fill="#7a2e2e"/>
         <ellipse class="m m-talk" cy="-220" rx="12" ry="9" fill="#7a2e2e"/>
         <path class="k-sweat" d="M64-322C64-322 50-300 64-294C78-300 64-322 64-322Z" fill="#9fc6c9" ${ol(2.5)}/>
-        <g class="k-ear"><circle cx="-78" cy="-258" r="11" fill="#fffdf7" ${ol(3)}/><rect x="-82" y="-252" width="8" height="24" rx="4" fill="#fffdf7" ${ol(2.5)}/></g>
+        <g class="k-ear"><circle cx="78" cy="-258" r="11" fill="#fffdf7" ${ol(3)}/><rect x="74" y="-252" width="8" height="24" rx="4" fill="#fffdf7" ${ol(2.5)}/></g>
+      </g>
       </g>
       <g class="k-desk">
         <path d="M${-200 + p}-42H${200 + p}L226 8H-226Z" fill="${c('#d7a86e')}" ${ol(3)}/>
@@ -212,8 +219,17 @@ const K = (() => {
         <rect x="-214" y="8" width="428" height="112" rx="4" fill="none" ${ol(3)}/>
       </g>
       <g class="k-paper"><path d="M-64-38H52L66 4H-78Z" fill="${wt}" ${ol(2)}/>
-        <path d="M-52-28H40M-56-18H44M-60-8H30" stroke="#cfc5ad" stroke-width="3"/></g>
-      <g class="k-glow"><rect x="-150" y="22" width="56" height="34" rx="6" fill="#3a3f4b" ${ol(3)}/><rect x="-145" y="26" width="46" height="26" rx="3" fill="#9fc6c9"/></g>
+        <path class="k-plines" d="M-52-28H40M-56-18H44M-60-8H30" stroke="#cfc5ad" stroke-width="3"/>
+        <g class="k-sheet"><path d="M-62-36H50L53-28H-65Z" fill="#f6dcd6"/>
+          ${[0, 1].map(r => [0, 1, 2, 3, 4].map(c => `<ellipse cx="${omrX(c)}" cy="${omrY(r)}" rx="6" ry="4" fill="none" stroke="#d6322b" stroke-width="1.5"/>`).join('')).join('')}
+          ${[0, 1, 2, 3, 4].map(c => `<ellipse class="k-omr-f${c + 1}" cx="${omrX(c)}" cy="${omrY(c % 2)}" rx="6" ry="4" fill="#16161a"/>`).join('')}
+          <path class="k-name" d="M-56-32q5-4 10 0t10 0 10 0 10 0" fill="none" stroke="#2b4fa8" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="60"/></g></g>
+      <g class="k-book"><g class="k-book-c"><path d="M84-36H186L190 0H80Z" fill="#34507a" ${ol(3)}/><path d="M94-24H170" stroke="#fffdf7" stroke-width="7"/></g>
+        <g class="k-book-o"><path d="M80-34H134V2H76Z" fill="#fffdf7" ${ol(2.5)}/><path d="M134-34H188L192 2H134Z" fill="#fffdf7" ${ol(2.5)}/>
+          <path d="M86-24q6-4 12 0t12 0 12 0M84-12q6-4 12 0t12 0M144-24q6-4 12 0t12 0 12 0M144-12q6-4 12 0t12 0 8 0" fill="none" stroke="#2b4fa8" stroke-width="2.5"/></g></g>
+      <g class="k-pen-down" stroke-linecap="round"><path d="M98-12L170-26" stroke="${OL}" stroke-width="14"/><path d="M98-12L170-26" stroke="#2b4fa8" stroke-width="8"/></g>
+      <g class="k-glow"><rect x="-28" y="12" width="56" height="34" rx="6" fill="#3a3f4b" ${ol(3)}/><rect x="-23" y="16" width="46" height="26" rx="3" fill="#9fc6c9"/></g>
+      <g class="k-arms">
       <g class="k-arm k-rest" stroke-linecap="round" fill="none">
         ${armL}${armR}
         <path class="k-pen" d="M76-22L104-78" stroke="#2b4fa8" stroke-width="9"/>
@@ -226,18 +242,39 @@ const K = (() => {
         ${armL}${sleeve('M92-140Q136-214 118-318')}${handC(118, -336, 20)}
       </g>
       <g class="k-arm k-palm" stroke-linecap="round" fill="none">
-        ${armR}${sleeve('M-92-140Q-160-156-136-214')}${handC(-136, -230, 26)}
-        <path d="M-148-238H-124M-148-229H-128M-146-220H-130" stroke="#2b4fa8" stroke-width="3.5"/>
+        ${armR}<g class="k-palmh">${sleeve('M-92-140Q-160-156-136-214')}${handC(-136, -230, 26)}
+        <path d="M-148-238H-124M-148-229H-128M-146-220H-130" stroke="#2b4fa8" stroke-width="3.5"/></g>
       </g>
       <g class="k-arm k-slip" stroke-linecap="round" fill="none">
-        ${armR}${sleeve('M-92-140Q-128-92-116-40')}${handC(-116, -26)}
-        <g transform="translate(-126 -34) scale(.42)">${P.cheatnote}</g>
+        ${armL}<g class="k-sliph">${sleeve('M92-140Q150-90 214-12')}
+        <g transform="translate(232 -14) scale(.6)">${P.cheatnote}</g>${handC(220, 0)}</g>
       </g>
+      ${arm('k-a-phone', `${sleeve('M-92-140Q-112-50-30 8')}${sleeve('M92-140Q112-50 30 8')}<g class="k-phoneh">${handC(-24, 18)}${handC(24, 18)}</g>`)}
+      ${arm('k-a-watch', `${sleeve('M-92-140Q-120-96-30-104')}${handC(-18, -108)}
+        <circle cx="-52" cy="-112" r="20" fill="#9fc6c9" opacity=".4"/><rect x="-66" y="-123" width="28" height="22" rx="5" fill="#3a3f4b" ${ol(3)}/>
+        <rect class="k-wscr" x="-62" y="-119" width="20" height="14" rx="3" fill="#9fc6c9"/>
+        ${sleeve('M92-140Q116-60-20-82')}<g class="k-watchtap">${handC(-30, -88, 16)}</g>`)}
+      ${arm('k-a-ear', `${armL}${sleeve('M92-140Q130-200 88-232')}${handC(88, -230)}`)}
+      ${arm('k-a-chin', `${armL}${sleeve('M92-140Q120-150 30-190')}<g class="k-chinh">${handC(14, -196)}</g>`)}
+      ${arm('k-a-yawn', `${armL}${sleeve('M92-140Q118-170 30-210')}${handC(36, -216)}`)}
+      ${arm('k-a-tap', `${armL}${sleeve('M92-140Q130-80 150-18')}<g class="k-taph">${handC(150, -4)}</g>
+        <path class="k-knock" d="M188-46q12 12 0 26M200-56q22 22 0 46" stroke="${OL}" stroke-width="5"/>`)}
+      ${arm('k-a-demand', `${armL}${sleeve('M92-140Q170-150 222-122')}<g class="k-fist">${handC(240, -118, 20)}<path d="M230-126h10M230-114h10" stroke="${OL}" stroke-width="3"/></g>
+        <path class="k-anger" transform="translate(60 -350)" d="M-16-5H-5V-16M5-16V-5H16M-16 5H-5V16M5 16V5H16" stroke="#d6322b" stroke-width="6"/>`)}
+      ${arm('k-a-swap', `${armL}<g class="k-swaph">${sleeve('M92-140Q170-90 236-26')}${handC(244, -16)}</g>`)}
+      ${arm('k-a-tape', `${armL}<path class="k-tapeline" d="M-44-20H30" stroke="${OL}" stroke-width="11"/><path class="k-tapeline" d="M-44-20H30" stroke="#fffdf7" stroke-width="7"/>
+        <g class="k-tapeh">${sleeve('M64-132Q70-50 2-30')}<g transform="translate(-14 -34) scale(.22)">${P.tape}</g>${handC(-4, -22)}</g>`)}
+      ${arm('k-a-flip', `<path class="k-flipg" d="M-4-34H52L46-96H-10Z" fill="${wt}" ${ol(2.5)}/>
+        ${sleeve('M-92-140Q-112-60-56-26')}${handC(-52, -20)}${sleeve('M92-140Q112-60 56-26')}${handC(52, -20)}`)}
+      ${arm('k-a-name', `${armL}${sleeve('M92-140Q90-60-18-44')}${wh(-28, -38)}`)}
+      ${arm('k-a-mark', `${armL}<g class="k-omrh">${sleeve('M60-132Q50-50-10 0')}${wh(-14, 6)}</g>`)}
+      ${arm('k-a-solve', `${armL}${sleeve('M92-140Q120-70 116-24')}${wh(122, -16)}`)}
+      </g>
+      <rect class="k-time" x="-66" y="132" width="132" height="10" fill="#f2b42c" ${ol(2)}/>
       <g class="k-bub" transform="translate(${96 + 40 * bub} ${-322 - 70 * bub}) scale(${bub})"><g class="in">
         <path d="M-78-52H78A10 10 0 0 1 88-42V38A10 10 0 0 1 78 48H-24L-60 84-44 48H-78A10 10 0 0 1-88 38V-42A10 10 0 0 1-78-52Z" fill="#fffdf7" ${ol(3)}/>
         <text class="k-bub-t" y="-2" font-size="58" font-weight="700" fill="${INK}" text-anchor="middle" dominant-baseline="central"></text>
-        <g class="k-bub-p" transform="translate(0 -10)"></g>
-        <rect class="k-time" x="-66" y="30" width="132" height="10" fill="#f2b42c"/></g></g>
+        <g class="k-bub-p" transform="translate(0 -10)"></g></g></g>
       <g class="k-stamp" transform="translate(0 -250)"><g class="in"><g transform="rotate(-12)" opacity=".9">
         <rect x="-80" y="-35" width="160" height="70" fill="#fffdf7" fill-opacity=".6" stroke="#d6322b" stroke-width="6"/>
         <rect x="-70" y="-25" width="140" height="50" fill="none" stroke="#d6322b" stroke-width="2"/>

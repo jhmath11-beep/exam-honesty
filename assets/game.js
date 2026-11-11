@@ -31,21 +31,21 @@ const G = (() => {
 
   // 부정행위(cheat:1)와 올바른 행동(cheat:0). % 는 옆자리 방향(l/r)으로 바뀐다
   const ACTS = [
-    { cheat: 1, cls: 'peek-% look-% face-sly', bub: '흘끔', msg: '다른 학생의 답안지를 보는 행위' },
-    { cheat: 1, cls: 'look-% face-sly', bub: '똑똑', msg: '손동작·소리로 신호를 주고받는 행위' },
-    { cheat: 1, cls: 'arm-slip look-d face-sly lean-d', bub: 'cheatnote', msg: '컨닝 페이퍼를 보는 행위' },
-    { cheat: 1, cls: 'arm-palm look-l face-sly', bub: '손바닥', msg: '손바닥에 적어 놓고 보는 행위' },
-    { cheat: 1, cls: 'has-phone look-d lean-d face-sly', bub: 'phone', msg: '휴대전화(무선기기)를 이용하는 행위' },
-    { cheat: 1, cls: 'has-watch look-l look-d face-sly', bub: 'smartwatch', msg: '스마트 워치(무선기기)를 이용하는 행위' },
-    { cheat: 1, cls: 'has-ear face-sly look-u', bub: 'headset', msg: '무선 이어폰(무선기기)을 이용하는 행위' },
-    { cheat: 1, cls: 'look-% face-angry', bub: '보여줘!', msg: '답을 보여 달라고 강요·위협하는 행위' },
-    { cheat: 1, cls: 'peek-% look-% face-smile', bub: '바꿔', msg: '답안지를 바꾸어 대신 작성하려는 행위' },
-    { cheat: 0, cls: 'arm-up look-c face-smile', bub: '질문!', msg: '궁금한 점이 있어 손을 든 거예요. 올바른 행동!' },
-    { cheat: 0, cls: 'flip look-d', bub: 'paper', msg: '문제지 면수와 인쇄 상태를 확인하는 중이에요.' },
-    { cheat: 0, cls: 'look-u face-smile', bub: '몇 시?', msg: '교실 시계로 남은 시간을 확인했어요.' },
-    { cheat: 0, cls: 'look-u face-o', bub: '음…', msg: '문제를 열심히 생각하는 중이에요.' },
-    { cheat: 0, cls: 'yawn', bub: '하암', msg: '하품은 부정행위가 아니에요.' },
-    { cheat: 0, cls: 'look-d face-smile', bub: 'tape', msg: '수정테이프로 답을 고치는 중이에요.' },
+    { cheat: 1, cls: 'peek-% look-% face-sly a-peek side-%', bub: '흘끔', msg: '다른 학생의 답안지를 보는 행위' },
+    { cheat: 1, cls: 'look-% face-sly a-tap side-%', bub: '똑똑', msg: '손동작·소리로 신호를 주고받는 행위' },
+    { cheat: 1, cls: 'arm-slip look-d face-sly lean-d a-note side-%', bub: 'cheatnote', msg: '컨닝 페이퍼를 보는 행위' },
+    { cheat: 1, cls: 'arm-palm look-l face-sly a-palm', bub: '손바닥', msg: '손바닥에 적어 놓고 보는 행위' },
+    { cheat: 1, cls: 'has-phone look-d lean-d face-sly a-phone', bub: 'phone', msg: '휴대전화(무선기기)를 이용하는 행위' },
+    { cheat: 1, cls: 'has-watch look-l look-d face-sly a-watch', bub: 'smartwatch', msg: '스마트 워치(무선기기)를 이용하는 행위' },
+    { cheat: 1, cls: 'has-ear face-sly look-u a-ear', bub: 'headset', msg: '무선 이어폰(무선기기)을 이용하는 행위' },
+    { cheat: 1, cls: 'look-% face-angry a-demand side-%', bub: '보여줘!', msg: '답을 보여 달라고 강요·위협하는 행위' },
+    { cheat: 1, cls: 'peek-% look-% face-smile a-swap side-%', bub: '바꿔', msg: '답안지를 바꾸어 대신 작성하려는 행위' },
+    { cheat: 0, cls: 'arm-up look-c face-smile a-ask', bub: '질문!', msg: '궁금한 점이 있어 손을 든 거예요. 올바른 행동!' },
+    { cheat: 0, cls: 'flip look-d a-flip', bub: 'paper', msg: '문제지 면수와 인쇄 상태를 확인하는 중이에요.' },
+    { cheat: 0, cls: 'look-u face-smile a-clock', bub: '몇 시?', msg: '교실 시계로 남은 시간을 확인했어요.' },
+    { cheat: 0, cls: 'look-u face-o a-chin', bub: '음…', msg: '문제를 열심히 생각하는 중이에요.' },
+    { cheat: 0, cls: 'yawn a-yawn', bub: '하암', msg: '하품은 부정행위가 아니에요.' },
+    { cheat: 0, cls: 'look-d face-smile a-tape', bub: 'tape', msg: '수정테이프로 답을 고치는 중이에요.' },
   ];
   // 14명: 뒷줄 5 · 가운뎃줄 4 · 앞줄 5. 줄마다 엇갈려 앉아 뒷사람 얼굴이 가려지지 않는다
   const ROWS = [[430, .45, [190, 495, 800, 1105, 1410]], [615, .55, [342, 647, 952, 1257]], [845, .66, [190, 495, 800, 1105, 1410]]];
@@ -58,8 +58,8 @@ const G = (() => {
   const WAVES = [{ name: '1교시', cheats: 4, decoys: 2, gap: 2300, life: 4300, max: 1 },
     { name: '2교시', cheats: 5, decoys: 3, gap: 1500, life: 3600, max: 2, pair: 1 },
     { name: '3교시', cheats: 6, decoys: 4, gap: 1050, life: 3000, max: 3, pair: 1, note: 1 }];
-  const NOTE = { cheat: 1, cls: 'arm-slip look-d face-sly', bub: 'cheatnote', msg: '쪽지(컨닝 페이퍼)를 주고받는 행위' };
-  const PAIR = { cheat: 1, cls: 'look-% face-sly', bub: '똑똑', msg: '손동작·소리로 신호를 주고받는 행위' };
+  const NOTE = { cheat: 1, cls: 'arm-slip look-d face-sly a-note a-pass side-%', bub: 'cheatnote', msg: '쪽지(컨닝 페이퍼)를 주고받는 행위' };
+  const PAIR = { cheat: 1, cls: 'look-% face-sly a-tap side-%', bub: '똑똑', msg: '손동작·소리로 신호를 주고받는 행위' };
   const HUNT_N = 3, TOTAL = HUNT_N * 2 + WAVES.reduce((a, w) => a + w.cheats + (w.pair || 0) * 2 + (w.note || 0), 0);
   const BEST_KEY = 'examwarning-best';
 
@@ -222,7 +222,7 @@ const G = (() => {
     svg.innerHTML = room + `<g id="wallbell" class="h" transform="translate(790 118)"><g class="in">${K.prop('bell', 1.1)}</g></g>` +
       SEATS.map(({ x, y, s, r }, i) => K.kid({ id: 'k' + i, x, y, s, hair: HAIR[i % 7], shirt: SHIRT[i % 6], skin: SKINS[i % 5], tie: i % 2 === 0, style: STYLE[(i * 4) % 9],
         blink: (i * .7) % 4, bub: .9 / s, tint: [.12, .06, 0][r], persp: (800 - x) * .06 })).join('') + '<g id="fx"></g>';
-    SEATS.forEach((_, i) => idle(i));
+    SEATS.forEach((_, i) => { kidEl(i).style.setProperty('--ph', -((i * .37) % 3).toFixed(2) + 's'); idle(i); });
     svg.addEventListener('click', e => { const k = e.target.closest('.kid'); if (k) tap(+k.id.slice(1)); });
     hud();
     over(`<h2>오늘은 내가 정직 지킴이!</h2><p>우리 반 14명이 시험을 봐요. <b>부정행위를 하는 학생</b>을 찾아 빠르게 눌러요.</p>
@@ -230,9 +230,11 @@ const G = (() => {
       <p>연속으로 잡으면 점수가 <b>최대 3배</b>! 올바른 행동을 하는 학생을 누르면 ●가 줄어요.</p>
       ${best ? `<p class="best">최고 기록 ${best}점</p>` : ''}<button class="btn" onclick="G.begin()">감독 시작</button>`);
   }
+  // 대기 4종: 쓰며 끄덕 / 고개 기울여 쓰기 / 펜 멈추고 읽기 / 몸 살짝 흔들며 쓰기
+  const IDLE = ['writing idle-a', 'writing idle-b', 'idle-c', 'writing idle-d'];
   function idle(i) {
     const el = kidEl(i);
-    el.setAttribute('class', 'kid tap writing look-d');
+    el.setAttribute('class', 'kid tap ' + IDLE[(i * 3) % 4] + ' look-d');
     K.bubble(el, '');
   }
   function banner(text, ms = 1300) {
@@ -297,13 +299,12 @@ const G = (() => {
     setEvent(i, ev.act, c === 0 ? 'r' : c === n - 1 ? 'l' : Math.random() < .5 ? 'l' : 'r', life);
     return true;
   }
-  const hop = (chain, k) => setEvent(chain[k], NOTE, 'r', Math.max(1500, st.w.life * .5) * st.slow, { chain, k });   // 쪽지가 옆으로 넘어간다
+  const hop = (chain, k) => setEvent(chain[k], NOTE, k < chain.length - 1 && chain[k + 1] < chain[k] ? 'l' : 'r', Math.max(1500, st.w.life * .5) * st.slow, { chain, k });   // 쪽지가 옆으로 넘어간다
   function setEvent(i, act, dir, life, extra) {
     const el = kidEl(i);
     el.setAttribute('class', 'kid tap timed');
     el.style.setProperty('--life', life + 'ms');
     K.set(el, act.cls.replaceAll('%', dir));
-    K.bubble(el, act.bub);
     st.busy[i] = { act, t0: Date.now(), life, timer: later(() => expire(i), life), ...extra };
   }
   function release(i, delay = 0) {
@@ -335,6 +336,7 @@ const G = (() => {
     st.score += pts;
     const el = kidEl(i);
     el.classList.remove('timed');
+    [...el.classList].forEach(c => /^(a|side|sheet|idle|arm|lean|peek|has)-/.test(c) && el.classList.remove(c));
     K.set(el, '!writing face-shock look-c caught'); K.bubble(el, '');
     popup(i, '+' + pts, 'good');
     if (st.combo >= 3 && st.combo % 3 === 0) popup(i, `${st.combo}연속!`, 'combo');
@@ -369,12 +371,12 @@ const G = (() => {
   // ── 정해진 시간 안에 '해당 학생'을 모두 찾는 단계 (시작종 전 / 종료령 뒤)
   const HUNT_PRE = { phase: 'pre', name: '시작종 전', msg: '시작종이 울리기 전에 문제를 풀거나 답을 표시하는 행위', wrong: '앗! 인적 사항을 표기하거나 조용히 기다리는 학생이에요.',
     intro: '문제지를 받았어요. 시작종 전에는 인적 사항만 표기! 미리 푸는 학생 3명을 찾아요.',
-    bad: k => ['writing look-d face-sly', ['문제 풀기', '답 표시', '문제 풀기'][k]],
-    ok: i => i % 3 === 0 ? ['writing look-d face-smile', '인적사항'] : ['arm-down look-c face-smile', ''],
+    bad: k => [k === 1 ? 'pre sheet-mark writing look-d face-sly' : 'pre sheet-solve writing look-d face-sly', ''],
+    ok: i => i % 3 === 0 ? ['pre sheet-name writing look-d face-smile', ''] : ['pre arm-down look-c face-smile', ''],
     next() { K.sfx('bell'); later(nextWave, 1500); toast('시작종이 울렸어요!'); } };
   const HUNT_END = { phase: 'bell', name: '종료령', msg: '종료령이 울린 뒤에도 계속 답안지를 작성하는 행위', wrong: '앗! 필기구를 내려놓고 손을 책상 아래로 내린 학생이에요.',
     intro: '종료령이 울렸어요! 아직도 답안지를 쓰고 있는 학생 3명을 찾아요.', ring: true,
-    bad: () => ['writing look-d face-sly', ''], ok: () => ['arm-down look-c face-smile', ''],
+    bad: () => ['writing look-d face-sly a-late', ''], ok: () => ['arm-down look-c face-smile', ''],
     next() { finishWatch(true); } };
   function hunt(h) {
     if (!st || st.hearts <= 0) return;

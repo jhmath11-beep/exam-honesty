@@ -254,7 +254,9 @@ html.tv .play { max-width: 1040px; }
 .kid[class*="arm-"] .k-rest { display: none; }
 .kid.arm-rest .k-rest, .kid.arm-down .k-down, .kid.arm-up .k-up, .kid.arm-palm .k-palm, .kid.arm-slip .k-slip { display: block; }
 .kid.arm-up .k-up { animation: wave .4s ease-in-out 2 alternate; transform-box: fill-box; transform-origin: 50% 100%; }
-.kid.writing .k-hand-r, .kid.writing .k-pen { animation: write .22s ease-in-out infinite alternate; }
+/* 숨은 팔 묶음 속 손에는 애니메이션을 걸지 않는다(display:none 이어도 애니메이션이 생겨 프레임 비용이 는다) */
+.kid.writing .k-rest .k-hand-r, .kid.writing .k-pen, .kid.writing.sheet-name .k-a-name .k-wh, .kid.writing.sheet-mark .k-a-mark .k-wh,
+.kid.writing.sheet-solve .k-a-solve .k-wh { animation: write .22s ease-in-out var(--ph, 0s) infinite alternate; }
 .kid.wiggle .k-in { animation: wiggle .3s ease-in-out infinite alternate; }
 .kid.yawn .m { display: none; }
 .kid.yawn .m-o { display: block; transform: scale(1.5); transform-box: fill-box; transform-origin: 50% 50%; }
@@ -381,6 +383,133 @@ html.tv .play { max-width: 1040px; }
 @keyframes floatUp { from { transform: translateY(20px); opacity: 0; } 20% { transform: none; opacity: 1; } to { transform: translateY(-90px); opacity: 0; } }
 .scene-svg.shake { animation: shake .4s; }
 .overlay .best { color: var(--pencil); font-weight: 800; }
+
+/* ── 2단계 행동 사전: 글자 없이 자세·소품·리듬으로 구분. 멈춘 자세(정적 transform)가 먼저, 움직임은 그 위 ── */
+.kid { --sx: 1; }
+.kid.side-l { --sx: -1; }
+.k-body, .k-arms { transform-box: view-box; transform-origin: 0 -30px; }
+/* 머리 회전축 = 머리 중심. fill-box 는 매 프레임 bbox 계산이 들어 3교시 fps 가 반으로 떨어진다 */
+.kid .k-head { transform-box: view-box; transform-origin: 0 -270px; }
+.kid .k-in { transform-box: view-box; transform-origin: 0 190px; }
+.kid .k-eyes { transform-box: view-box; transform-origin: 0 -262px; }
+.kid :is(.k-pupils, .k-hand-r, .k-pen) { transform-box: view-box; }
+.k-a-tap, .k-a-demand, .k-a-swap, .k-slip { transform-box: view-box; transform-origin: 0 0; transform: scaleX(var(--sx)); }
+.k-sliph, .k-swaph { transform-box: view-box; transform-origin: 92px -140px; }
+.k-sheet, .k-book, .k-book-o, .k-pen-down, .k-uglow, .k-sheet .k-name, .k-sheet [class^="k-omr-f"] { display: none; }
+.kid:is(.a-phone, .a-watch, .a-ear, .a-chin, .a-yawn, .a-tap, .a-demand, .a-swap, .a-tape, .a-flip, .sheet-name, .sheet-mark, .sheet-solve) .k-rest { display: none; }
+.kid.a-phone .k-a-phone, .kid.a-watch .k-a-watch, .kid.a-ear .k-a-ear, .kid.a-chin .k-a-chin, .kid.a-yawn .k-a-yawn, .kid.a-tap .k-a-tap,
+.kid.a-demand .k-a-demand, .kid.a-swap .k-a-swap, .kid.a-tape .k-a-tape, .kid.a-flip .k-a-flip,
+.kid.sheet-name .k-a-name, .kid.sheet-mark .k-a-mark, .kid.sheet-solve .k-a-solve { display: block; }
+
+/* 대기 4종 (모두 --ph 시차) */
+.kid .k-in { animation-delay: var(--ph, 0s); }
+.kid.idle-a .k-head { animation: idleNod 2.8s ease-in-out var(--ph, 0s) infinite; }
+.kid.idle-b .k-head { transform: rotate(-5deg); }
+.kid.idle-b.writing :is(.k-hand-r, .k-pen) { animation-duration: .3s; }
+/* ponytail: 대기 숨·흔들기는 몸통만(팔은 책상 위에 둔다). 14명 동시 반복이라 큰 묶음 애니메이션 수를 줄여 3교시 fps 확보 */
+.kid.idle-b .k-body { animation: idleBreath 3.1s ease-in-out var(--ph, 0s) infinite; }
+.kid.idle-c .k-pupils { transform: translate(-6px, 7px); animation: idleRead 2.6s steps(4, jump-none) var(--ph, 0s) infinite; }
+.kid.idle-d.writing :is(.k-hand-r, .k-pen) { animation-duration: .26s; }
+.kid.idle-d .k-body { animation: idleSway 4s ease-in-out var(--ph, 0s) infinite alternate; }
+@keyframes idleNod { 0%, 100% { transform: none; } 50% { transform: translateY(4px) rotate(2deg); } }
+@keyframes idleBreath { 0%, 100% { transform: none; } 50% { transform: scaleY(1.015); } }
+@keyframes idleRead { from { transform: translate(-6px, 7px); } to { transform: translate(6px, 7px); } }
+@keyframes idleSway { from { transform: rotate(-1.5deg); } to { transform: rotate(1.5deg); } }
+
+/* 부정행위 */
+.kid.a-peek :is(.k-body, .k-arms) { transform: translateX(calc(65px * var(--sx))) rotate(calc(12deg * var(--sx))); animation: peekB 2.6s ease-in-out infinite; }
+.kid.a-peek .k-head { transform: translate(calc(44px * var(--sx)), -14px) rotate(calc(14deg * var(--sx))); animation: peekH 2.6s ease-in-out infinite; }
+.kid.a-peek .k-pupils { transform: translate(calc(15px * var(--sx)), 2px); }
+@keyframes peekB { 0%, 80%, 100% { transform: none; } 20%, 70% { transform: translateX(calc(65px * var(--sx))) rotate(calc(12deg * var(--sx))); } }
+@keyframes peekH { 0%, 80%, 100% { transform: none; } 20%, 70% { transform: translate(calc(44px * var(--sx)), -14px) rotate(calc(14deg * var(--sx))); } }
+
+.kid.a-tap .k-head { transform: translateX(calc(10px * var(--sx))) rotate(calc(6deg * var(--sx))); }
+.kid.a-tap .k-taph { animation: tapH 1.7s infinite; }
+.kid.a-tap .k-knock { animation: tapK 1.7s infinite; }
+@keyframes tapH { 0%, 21%, 42%, 63%, 100% { transform: none; } 10%, 31%, 52% { transform: translateY(-18px); } }
+@keyframes tapK { 0%, 5%, 21%, 26%, 42%, 47% { opacity: 1; } 9%, 18%, 30%, 39%, 51%, 100% { opacity: 0; } }
+
+.kid.a-note .k-head { transform: translateY(18px) rotate(calc(10deg * var(--sx))); animation: noteH 3s ease-in-out infinite; }
+.kid.a-pass .k-sliph { transform: rotate(-11deg) scale(1.12); }
+@keyframes noteH { 0%, 78%, 96%, 100% { transform: translateY(18px) rotate(calc(10deg * var(--sx))); } 81%, 93% { transform: none; } }
+
+.kid.a-palm .k-head { transform: translateX(-8px) rotate(-8deg); animation: palmH 2.4s ease-in-out infinite; }
+.kid.a-palm .k-palmh { animation: palmA 2.4s ease-in-out infinite; }
+@keyframes palmH { 0%, 65%, 100% { transform: translateX(-8px) rotate(-8deg); } 72%, 92% { transform: none; } }
+@keyframes palmA { 0%, 65%, 100% { transform: none; } 72%, 92% { transform: translateY(40px); } }
+
+.kid.a-phone .k-uglow { display: block; opacity: .45; animation: uglow 1s ease-in-out infinite alternate; }
+.kid.a-phone .k-phoneh { animation: thumb .17s ease-in-out infinite alternate; }
+@keyframes uglow { from { opacity: .3; } to { opacity: .55; } }
+@keyframes thumb { to { transform: translateY(-4px); } }
+
+.kid.a-watch .k-head { transform: translate(-12px, 12px) rotate(-6deg); }
+.kid.a-watch .k-pupils { transform: translate(-6px, 7px); }
+.kid.a-watch .k-watchtap { animation: watchTap 2s ease-in-out infinite; }
+.kid.a-watch .k-wscr { animation: glow .5s infinite alternate; }
+@keyframes watchTap { 0%, 20%, 40%, 100% { transform: none; } 10%, 30% { transform: translate(-6px, -10px); } }
+
+.kid.a-ear .k-head { transform: translateX(4px) rotate(7deg); animation: earNod .5s ease-in-out infinite alternate; }
+@keyframes earNod { from { transform: translateX(4px) rotate(4deg); } to { transform: translateX(4px) rotate(9deg); } }
+
+.kid.a-demand :is(.k-body, .k-arms) { transform: translateX(calc(14px * var(--sx))) rotate(calc(5deg * var(--sx))); }
+.kid.a-demand .k-fist { transform-box: view-box; transform-origin: 240px -118px; animation: fist .14s ease-in-out infinite alternate; }
+@keyframes fist { from { transform: rotate(-12deg); } to { transform: rotate(12deg); } }
+
+.kid.a-swap .k-paper { transform: translateX(calc(250px * var(--sx))); animation: swapP 2.2s ease-in-out infinite; }
+.kid.a-swap .k-swaph { animation: swapA 2.2s ease-in-out infinite; }
+@keyframes swapP { 0%, 90%, 100% { transform: none; } 30%, 60% { transform: translateX(calc(250px * var(--sx))); } }
+@keyframes swapA { 0%, 90%, 100% { transform: rotate(77deg) scale(.71); } 30%, 60% { transform: none; } }
+
+/* 올바른 행동 */
+.kid.a-ask .k-up { animation: wave .4s ease-in-out infinite alternate; }
+.kid.a-flip .k-head { transform: translateY(10px); }
+.kid.a-flip .k-flipg { transform-box: view-box; transform-origin: -4px -34px; animation: flipPage .5s ease-in-out infinite alternate; }
+@keyframes flipPage { to { transform: scaleX(.25); } }
+.kid.a-clock .k-head { transform: translate(8px, -22px) rotate(12deg); animation: clockH 3s ease-in-out infinite; }
+.kid.a-clock .k-pupils { transform: translate(8px, -13px); }
+@keyframes clockH { 0%, 70%, 100% { transform: none; } 10%, 60% { transform: translate(8px, -22px) rotate(12deg); } }
+.kid.a-chin .k-head { transform: rotate(-6deg); }
+.kid.a-chin .k-pupils { transform: translate(-7px, -7px); }
+.kid.a-chin .k-chinh { animation: chinA 1.2s ease-in-out infinite; }
+@keyframes chinA { 50% { transform: translateY(-6px); } }
+.kid.a-yawn .k-head { transform: translateY(-10px) rotate(-4deg); }
+.kid.a-yawn :is(.k-body, .k-arms) { transform: scaleY(1.03); animation: yawnB 2.4s ease-in-out infinite; }
+@keyframes yawnB { 0%, 100% { transform: none; } 50% { transform: scaleY(1.03); } }
+.kid.a-tape .k-tapeh { transform: translateX(30px); animation: tapeH 1.2s ease-in-out infinite; }
+.kid.a-tape .k-tapeline { transform-box: view-box; transform-origin: -44px -20px; animation: tapeL 1.2s ease-in-out infinite; }
+@keyframes tapeH { 0% { transform: translateX(-40px); } 58%, 100% { transform: translateX(30px); } }
+@keyframes tapeL { 0% { transform: scaleX(0); } 58%, 100% { transform: none; } }
+
+/* 시작종 전(답안지 1.6배 + 시험지) / 종료령 */
+.kid.pre .k-paper { transform-box: fill-box; transform-origin: 50% 50%; transform: translate(-30px, 0) scale(1.6); }
+.kid.pre .k-plines { display: none; }
+.kid.pre .k-sheet, .kid.pre .k-book, .kid.sheet-name .k-name, .kid.sheet-mark [class^="k-omr-f"] { display: block; }
+.kid.sheet-solve .k-book-o { display: block; }
+.kid.sheet-solve .k-book-c { display: none; }
+.kid.sheet-name .k-name { animation: nameW 2s linear infinite; }
+@keyframes nameW { 0% { stroke-dashoffset: 60; } 80%, 100% { stroke-dashoffset: 0; } }
+.kid.sheet-mark .k-omr-f4, .kid.sheet-mark .k-omr-f5 { opacity: 0; }
+.kid.sheet-mark .k-omr-f1 { animation: omr1 2.4s infinite; }
+.kid.sheet-mark .k-omr-f2 { animation: omr2 2.4s infinite; }
+.kid.sheet-mark .k-omr-f3 { animation: omr3 2.4s infinite; }
+.kid.sheet-mark .k-omr-f4 { animation: omr4 2.4s infinite; }
+.kid.sheet-mark .k-omr-f5 { animation: omr5 2.4s infinite; }
+@keyframes omr1 { 0%, 7% { opacity: 0; } 8%, 100% { opacity: 1; } }
+@keyframes omr2 { 0%, 24% { opacity: 0; } 25%, 100% { opacity: 1; } }
+@keyframes omr3 { 0%, 41% { opacity: 0; } 42%, 100% { opacity: 1; } }
+@keyframes omr4 { 0%, 57% { opacity: 0; } 58%, 100% { opacity: 1; } }
+@keyframes omr5 { 0%, 74% { opacity: 0; } 75%, 100% { opacity: 1; } }
+.kid.sheet-mark .k-omrh { animation: omrHand 2.4s infinite; }
+@keyframes omrHand { 0%, 16% { transform: translateX(-64px); } 17%, 33% { transform: translateX(-32px); } 34%, 50% { transform: none; }
+  51%, 66% { transform: translateX(32px); } 67%, 100% { transform: translateX(64px); } }
+.kid.sheet-mark .k-head { transform: translateY(8px); animation: markH 2.4s ease-in-out infinite; }
+@keyframes markH { 0%, 40%, 100% { transform: translateY(8px); } 50%, 90% { transform: translate(10px, 6px) rotate(6deg); } }
+.kid.sheet-solve .k-head { transform: translate(10px, 10px) rotate(6deg); }
+.kid.arm-down .k-pen-down { display: block; }
+.kid.a-late .k-head { transform: translateY(12px); animation: lateH 1.8s ease-in-out infinite; }
+.kid.a-late.writing :is(.k-hand-r, .k-pen) { animation-duration: .14s; }
+@keyframes lateH { 0%, 80%, 100% { transform: translateY(12px); } 86%, 94% { transform: none; } }
 
 </style>
 </head>
@@ -1086,9 +1215,14 @@ const K = (() => {
     const knot = tie ? `<path d="M-7-160H7L10-150 4-112 0-104-4-112-10-150Z" fill="${rb}" ${ol(2.5)}/>`
       : `<path d="M0-156L-18-167V-145ZM0-156L18-167V-145Z" fill="${rb}" ${ol(2.5)}/><circle cy="-156" r="5" fill="${rb}" ${ol(2.5)}/>`;
     const p = persp;
+    // 손 + 쥔 펜(쓰는 손). 2단계 새 팔 묶음에서 쓴다
+    const wh = (hx, hy) => `<g class="k-wh">${handC(hx, hy)}<path d="M${hx + 2} ${hy - 4}l28-56" stroke="#2b4fa8" stroke-width="9"/></g>`;
+    const arm = (cls, body) => `<g class="k-arm ${cls}" stroke-linecap="round" fill="none">${body}</g>`;
+    const omrX = c => -44 + c * 20, omrY = r => -19 + r * 11;
     return `<g id="${id}" class="kid" transform="translate(${x} ${y}) scale(${s})" style="--blink:${blink}s"><g class="k-in">
+      <g class="k-body">
       ${back}
-      <rect x="-14" y="-204" width="28" height="44" fill="${sk}" ${ol(3)}/><rect x="-12" y="-200" width="24" height="12" ${SHADE}/>
+      <rect x="-14" y="-230" width="28" height="70" fill="${sk}" ${ol(3)}/><rect x="-12" y="-200" width="24" height="12" ${SHADE}/>
       ${shape('M-104-30C-112-112-100-160-56-168L56-168C100-160 112-112 104-30Z', jk, 'M60-167C100-158 112-112 104-30H70C80-90 78-140 60-167Z')}
       <path d="M-30-168L0-112 30-168Z" fill="${wt}" ${ol(3)}/><path d="M-44-166L-10-116M44-166L10-116" stroke="${OL}" stroke-width="2.5" opacity=".5"/>
       ${knot}
@@ -1096,6 +1230,7 @@ const K = (() => {
         <circle cx="-76" cy="-262" r="13" fill="${sk}" ${ol()}/><circle cx="76" cy="-262" r="13" fill="${sk}" ${ol()}/>
         <circle cy="-270" r="77" fill="${sk}"/><path d="M38.5-336.7A77 77 0 0 1 38.5-203.3A100 100 0 0 0 38.5-336.7Z" fill="#1a2340" opacity=".12"/>
         <circle cy="-270" r="77" fill="none" ${ol()}/>
+        <ellipse class="k-uglow" cy="-215" rx="58" ry="34" fill="#9fc6c9"/>
         ${shape('M-80-274A80 80 0 0 1 80-274Q60-300 26-296Q-2-322-38-298Q-64-296-80-274Z', hr, 'M44-341A80 80 0 0 1 80-274Q66-292 50-297Z')}
         <g class="k-brows" stroke="${INK}" stroke-width="4" stroke-linecap="round"><path class="k-brow-l" d="M-40-292H-18"/><path class="k-brow-r" d="M18-292H40"/></g>
         <g class="k-eyes"><g class="k-pupils"><ellipse cx="-27" cy="-262" rx="7.5" ry="10.5" fill="${INK}"/><ellipse cx="27" cy="-262" rx="7.5" ry="10.5" fill="${INK}"/>
@@ -1107,7 +1242,8 @@ const K = (() => {
         <ellipse class="m m-o" cy="-218" rx="9" ry="11" fill="#7a2e2e"/>
         <ellipse class="m m-talk" cy="-220" rx="12" ry="9" fill="#7a2e2e"/>
         <path class="k-sweat" d="M64-322C64-322 50-300 64-294C78-300 64-322 64-322Z" fill="#9fc6c9" ${ol(2.5)}/>
-        <g class="k-ear"><circle cx="-78" cy="-258" r="11" fill="#fffdf7" ${ol(3)}/><rect x="-82" y="-252" width="8" height="24" rx="4" fill="#fffdf7" ${ol(2.5)}/></g>
+        <g class="k-ear"><circle cx="78" cy="-258" r="11" fill="#fffdf7" ${ol(3)}/><rect x="74" y="-252" width="8" height="24" rx="4" fill="#fffdf7" ${ol(2.5)}/></g>
+      </g>
       </g>
       <g class="k-desk">
         <path d="M${-200 + p}-42H${200 + p}L226 8H-226Z" fill="${c('#d7a86e')}" ${ol(3)}/>
@@ -1116,8 +1252,17 @@ const K = (() => {
         <rect x="-214" y="8" width="428" height="112" rx="4" fill="none" ${ol(3)}/>
       </g>
       <g class="k-paper"><path d="M-64-38H52L66 4H-78Z" fill="${wt}" ${ol(2)}/>
-        <path d="M-52-28H40M-56-18H44M-60-8H30" stroke="#cfc5ad" stroke-width="3"/></g>
-      <g class="k-glow"><rect x="-150" y="22" width="56" height="34" rx="6" fill="#3a3f4b" ${ol(3)}/><rect x="-145" y="26" width="46" height="26" rx="3" fill="#9fc6c9"/></g>
+        <path class="k-plines" d="M-52-28H40M-56-18H44M-60-8H30" stroke="#cfc5ad" stroke-width="3"/>
+        <g class="k-sheet"><path d="M-62-36H50L53-28H-65Z" fill="#f6dcd6"/>
+          ${[0, 1].map(r => [0, 1, 2, 3, 4].map(c => `<ellipse cx="${omrX(c)}" cy="${omrY(r)}" rx="6" ry="4" fill="none" stroke="#d6322b" stroke-width="1.5"/>`).join('')).join('')}
+          ${[0, 1, 2, 3, 4].map(c => `<ellipse class="k-omr-f${c + 1}" cx="${omrX(c)}" cy="${omrY(c % 2)}" rx="6" ry="4" fill="#16161a"/>`).join('')}
+          <path class="k-name" d="M-56-32q5-4 10 0t10 0 10 0 10 0" fill="none" stroke="#2b4fa8" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="60"/></g></g>
+      <g class="k-book"><g class="k-book-c"><path d="M84-36H186L190 0H80Z" fill="#34507a" ${ol(3)}/><path d="M94-24H170" stroke="#fffdf7" stroke-width="7"/></g>
+        <g class="k-book-o"><path d="M80-34H134V2H76Z" fill="#fffdf7" ${ol(2.5)}/><path d="M134-34H188L192 2H134Z" fill="#fffdf7" ${ol(2.5)}/>
+          <path d="M86-24q6-4 12 0t12 0 12 0M84-12q6-4 12 0t12 0M144-24q6-4 12 0t12 0 12 0M144-12q6-4 12 0t12 0 8 0" fill="none" stroke="#2b4fa8" stroke-width="2.5"/></g></g>
+      <g class="k-pen-down" stroke-linecap="round"><path d="M98-12L170-26" stroke="${OL}" stroke-width="14"/><path d="M98-12L170-26" stroke="#2b4fa8" stroke-width="8"/></g>
+      <g class="k-glow"><rect x="-28" y="12" width="56" height="34" rx="6" fill="#3a3f4b" ${ol(3)}/><rect x="-23" y="16" width="46" height="26" rx="3" fill="#9fc6c9"/></g>
+      <g class="k-arms">
       <g class="k-arm k-rest" stroke-linecap="round" fill="none">
         ${armL}${armR}
         <path class="k-pen" d="M76-22L104-78" stroke="#2b4fa8" stroke-width="9"/>
@@ -1130,18 +1275,39 @@ const K = (() => {
         ${armL}${sleeve('M92-140Q136-214 118-318')}${handC(118, -336, 20)}
       </g>
       <g class="k-arm k-palm" stroke-linecap="round" fill="none">
-        ${armR}${sleeve('M-92-140Q-160-156-136-214')}${handC(-136, -230, 26)}
-        <path d="M-148-238H-124M-148-229H-128M-146-220H-130" stroke="#2b4fa8" stroke-width="3.5"/>
+        ${armR}<g class="k-palmh">${sleeve('M-92-140Q-160-156-136-214')}${handC(-136, -230, 26)}
+        <path d="M-148-238H-124M-148-229H-128M-146-220H-130" stroke="#2b4fa8" stroke-width="3.5"/></g>
       </g>
       <g class="k-arm k-slip" stroke-linecap="round" fill="none">
-        ${armR}${sleeve('M-92-140Q-128-92-116-40')}${handC(-116, -26)}
-        <g transform="translate(-126 -34) scale(.42)">${P.cheatnote}</g>
+        ${armL}<g class="k-sliph">${sleeve('M92-140Q150-90 214-12')}
+        <g transform="translate(232 -14) scale(.6)">${P.cheatnote}</g>${handC(220, 0)}</g>
       </g>
+      ${arm('k-a-phone', `${sleeve('M-92-140Q-112-50-30 8')}${sleeve('M92-140Q112-50 30 8')}<g class="k-phoneh">${handC(-24, 18)}${handC(24, 18)}</g>`)}
+      ${arm('k-a-watch', `${sleeve('M-92-140Q-120-96-30-104')}${handC(-18, -108)}
+        <circle cx="-52" cy="-112" r="20" fill="#9fc6c9" opacity=".4"/><rect x="-66" y="-123" width="28" height="22" rx="5" fill="#3a3f4b" ${ol(3)}/>
+        <rect class="k-wscr" x="-62" y="-119" width="20" height="14" rx="3" fill="#9fc6c9"/>
+        ${sleeve('M92-140Q116-60-20-82')}<g class="k-watchtap">${handC(-30, -88, 16)}</g>`)}
+      ${arm('k-a-ear', `${armL}${sleeve('M92-140Q130-200 88-232')}${handC(88, -230)}`)}
+      ${arm('k-a-chin', `${armL}${sleeve('M92-140Q120-150 30-190')}<g class="k-chinh">${handC(14, -196)}</g>`)}
+      ${arm('k-a-yawn', `${armL}${sleeve('M92-140Q118-170 30-210')}${handC(36, -216)}`)}
+      ${arm('k-a-tap', `${armL}${sleeve('M92-140Q130-80 150-18')}<g class="k-taph">${handC(150, -4)}</g>
+        <path class="k-knock" d="M188-46q12 12 0 26M200-56q22 22 0 46" stroke="${OL}" stroke-width="5"/>`)}
+      ${arm('k-a-demand', `${armL}${sleeve('M92-140Q170-150 222-122')}<g class="k-fist">${handC(240, -118, 20)}<path d="M230-126h10M230-114h10" stroke="${OL}" stroke-width="3"/></g>
+        <path class="k-anger" transform="translate(60 -350)" d="M-16-5H-5V-16M5-16V-5H16M-16 5H-5V16M5 16V5H16" stroke="#d6322b" stroke-width="6"/>`)}
+      ${arm('k-a-swap', `${armL}<g class="k-swaph">${sleeve('M92-140Q170-90 236-26')}${handC(244, -16)}</g>`)}
+      ${arm('k-a-tape', `${armL}<path class="k-tapeline" d="M-44-20H30" stroke="${OL}" stroke-width="11"/><path class="k-tapeline" d="M-44-20H30" stroke="#fffdf7" stroke-width="7"/>
+        <g class="k-tapeh">${sleeve('M64-132Q70-50 2-30')}<g transform="translate(-14 -34) scale(.22)">${P.tape}</g>${handC(-4, -22)}</g>`)}
+      ${arm('k-a-flip', `<path class="k-flipg" d="M-4-34H52L46-96H-10Z" fill="${wt}" ${ol(2.5)}/>
+        ${sleeve('M-92-140Q-112-60-56-26')}${handC(-52, -20)}${sleeve('M92-140Q112-60 56-26')}${handC(52, -20)}`)}
+      ${arm('k-a-name', `${armL}${sleeve('M92-140Q90-60-18-44')}${wh(-28, -38)}`)}
+      ${arm('k-a-mark', `${armL}<g class="k-omrh">${sleeve('M60-132Q50-50-10 0')}${wh(-14, 6)}</g>`)}
+      ${arm('k-a-solve', `${armL}${sleeve('M92-140Q120-70 116-24')}${wh(122, -16)}`)}
+      </g>
+      <rect class="k-time" x="-66" y="132" width="132" height="10" fill="#f2b42c" ${ol(2)}/>
       <g class="k-bub" transform="translate(${96 + 40 * bub} ${-322 - 70 * bub}) scale(${bub})"><g class="in">
         <path d="M-78-52H78A10 10 0 0 1 88-42V38A10 10 0 0 1 78 48H-24L-60 84-44 48H-78A10 10 0 0 1-88 38V-42A10 10 0 0 1-78-52Z" fill="#fffdf7" ${ol(3)}/>
         <text class="k-bub-t" y="-2" font-size="58" font-weight="700" fill="${INK}" text-anchor="middle" dominant-baseline="central"></text>
-        <g class="k-bub-p" transform="translate(0 -10)"></g>
-        <rect class="k-time" x="-66" y="30" width="132" height="10" fill="#f2b42c"/></g></g>
+        <g class="k-bub-p" transform="translate(0 -10)"></g></g></g>
       <g class="k-stamp" transform="translate(0 -250)"><g class="in"><g transform="rotate(-12)" opacity=".9">
         <rect x="-80" y="-35" width="160" height="70" fill="#fffdf7" fill-opacity=".6" stroke="#d6322b" stroke-width="6"/>
         <rect x="-70" y="-25" width="140" height="50" fill="none" stroke="#d6322b" stroke-width="2"/>
@@ -1308,17 +1474,39 @@ const V = (() => {
   let renderer, scene, camera, canvas, audio, ui, raf = 0, stage, objs = {}, titleObj;
   let sceneIdx = -1, cueIdx = -1, lastT = 0, timeline = [], tlPos = 0, clock = 0, prevNow = 0, amp = 0, failed = false;
   const chars = {}, bgKids = [];
+  const low = (navigator.hardwareConcurrency || 8) <= 4 || Math.min(screen.width, screen.height) < 820;   // 저사양: 그림자 해상도·배경 학생 외곽선·픽셀 비율을 줄인다
   const cam = { pos: new T.Vector3(), look: new T.Vector3(), tpos: new T.Vector3(), tlook: new T.Vector3(), shot: '' };
 
   /* ───────── 기본 도구 ───────── */
   const mats = {};
   const mat = (c, o) => { const k = c + (o ? JSON.stringify(o) : ''); return mats[k] || (mats[k] = new T.MeshStandardMaterial({ color: c, roughness: .82, metalness: 0, ...o })); };
+  // 사람·마스코트용 만화 음영(3단계 명암). 교실은 위의 mat 그대로
+  let grad, olMat, toon = false, olOn = false;   // toon·olOn 은 makeKid·makeMascot 안에서만 켠다
+  function toonMat(c, o = {}) {
+    const k = 'toon' + c + JSON.stringify(o);
+    if (mats[k]) return mats[k];
+    if (!grad) {
+      grad = new T.DataTexture(new Uint8Array([110, 110, 110, 255, 190, 190, 190, 255, 255, 255, 255, 255]), 3, 1);
+      grad.minFilter = grad.magFilter = T.NearestFilter; grad.generateMipmaps = false; grad.needsUpdate = true;
+    }
+    const { roughness, metalness, flatShading, ...r } = o;   // 툰 재질에 없는 키는 빼야 three 경고가 안 난다
+    return mats[k] = new T.MeshToonMaterial({ color: c, gradientMap: grad, ...r });
+  }
+  function outline(m, geo) {   // 뒤집은 껍질 외곽선: 같은 모양을 법선 방향으로 살짝 부풀려 뒷면만 그린다
+    if (!olMat) {
+      olMat = new T.MeshBasicMaterial({ color: LINE, side: T.BackSide });
+      olMat.onBeforeCompile = s => { s.vertexShader = s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  transformed += normal * 0.011;'); };
+    }
+    const h = new T.Mesh(geo, olMat);
+    h.castShadow = false; m.add(h);
+  }
   function add(parent, geo, color, pos, o = {}) {
-    const m = new T.Mesh(geo, typeof color === 'string' ? mat(color, o.mat) : color);
+    const m = new T.Mesh(geo, typeof color === 'string' ? (toon ? toonMat : mat)(color, o.mat) : color);
     if (pos) m.position.set(...pos);
     if (o.rot) m.rotation.set(...o.rot);
     if (o.scale) m.scale.set(...o.scale);
     m.castShadow = o.cast !== false; m.receiveShadow = !!o.receive;
+    if (o.ol && olOn) outline(m, o.ol.isBufferGeometry ? o.ol : geo);
     parent.add(m);
     return m;
   }
@@ -1509,33 +1697,39 @@ const V = (() => {
   }
 
   /* ───────── 캐릭터 ───────── */
-  const P0 = { pSx: -.45, pSz: -.1, pEx: -1.35, nSx: -.45, nSz: -.1, nEx: -1.35, bYaw: 0, bLean: 0, bRoll: 0,
-    hYaw: 0, hPitch: 0, eX: 0, eY: 0, eOpen: 1, curve: 1, mO: 0, brow: 0, browL: 0 };
-  const REST = { pSx: -.45, pSz: -.1, pEx: -1.35, nSx: -.45, nSz: -.1, nEx: -1.35 };
-  const LOOK0 = { hYaw: 0, hPitch: 0, eX: 0, eY: 0, bRoll: 0, bYaw: 0, bLean: 0 };
+  const P0 = { pSx: -.45, pSz: -.1, pEx: -1.35, pWx: 0, nSx: -.45, nSz: -.1, nEx: -1.35, nWx: 0, bYaw: 0, bLean: 0, bRoll: 0, plX: 0, plYaw: 0, slump: 0, tense: 0,
+    kneeL: 0, kneeR: 0, hYaw: 0, hPitch: 0, hRoll: 0, eX: 0, eY: 0, eOpen: 1, curve: 1, mO: 0, brow: 0, browL: 0 };
+  const REST = { pSx: -.45, pSz: -.1, pEx: -1.35, pWx: 0, nSx: -.45, nSz: -.1, nEx: -1.35, nWx: 0 };
+  const LOOK0 = { hYaw: 0, hPitch: 0, hRoll: 0, eX: 0, eY: 0, bRoll: 0, bYaw: 0, bLean: 0, plX: 0 };
+  // 채널별 스프링 [세기, 감쇠]: 눈은 빠르게, 몸은 묵직하게
+  const SPR = {};
+  [['eX eY', 400, 40], ['eOpen curve mO brow browL', 160, 22], ['hPitch hYaw hRoll', 90, 17], ['pSx pSz pEx pWx nSx nSz nEx nWx', 70, 15],
+    ['bLean bYaw bRoll plX plYaw slump tense', 35, 11], ['kneeL kneeR', 50, 13]].forEach(([ks, k, d]) => ks.split(' ').forEach(c => SPR[c] = [k, d]));
   // 상태 이름 → 목표 자세. n = 옆자리 방향(+1/-1)
   const TOK = {
-    'arm-rest': () => REST,
+    'arm-rest': () => ({ ...REST, pSz: -.05, nWx: .2 }),
     'arm-up': () => ({ ...REST, pSx: -2.9, pSz: .5, pEx: -.15 }),
-    'arm-down': () => ({ pSx: .12, pSz: .1, pEx: -.2, nSx: .12, nSz: .1, nEx: -.2 }),
-    'arm-palm': () => ({ ...REST, nSx: -1.25, nSz: -.5, nEx: -1.95 }),
+    'arm-down': () => ({ pSx: .12, pSz: .1, pEx: -.2, pWx: 0, nSx: .12, nSz: .1, nEx: -.2, nWx: 0 }),
+    'arm-palm': () => ({ ...REST, nSx: -1.25, nSz: -.5, nEx: -1.95, nWx: -.6 }),
     'arm-slip': () => ({ ...REST, nSx: .1, nSz: 0, nEx: -1.05 }),
-    'arm-hold': () => ({ ...REST, pSx: -1.3, pSz: .22, pEx: -1.25 }),
-    'arm-cheer': () => ({ pSx: -2.8, pSz: .5, pEx: -.25, nSx: -2.8, nSz: .5, nEx: -.25 }),
-    'face-smile': () => ({ curve: 1, mO: 0, brow: 0, browL: 0, eOpen: 1 }),
-    'face-sad': () => ({ curve: -.8, mO: 0, brow: -.3, browL: 0, eOpen: 1 }),
-    'face-sweat': () => ({ curve: -.6, mO: 0, brow: -.35, browL: .01, eOpen: 1 }),
-    'face-o': () => ({ curve: .1, mO: .75, brow: 0, browL: .015, eOpen: 1.1 }),
-    'face-shock': () => ({ curve: .1, mO: 1, brow: -.1, browL: .03, eOpen: 1.25 }),
-    'face-sly': () => ({ curve: .7, mO: 0, brow: .3, browL: -.005, eOpen: .62 }),
-    'face-angry': () => ({ curve: -.6, mO: 0, brow: .45, browL: -.01, eOpen: .85 }),
+    'arm-hold': () => ({ ...REST, pSx: -1.8, pSz: .3, pEx: -.95 }),   // 휴대전화가 phoneFly 출발점(-.72,1.33,-.3)에 오도록
+    'arm-cheer': () => ({ pSx: -2.8, pSz: .5, pEx: -.25, pWx: 0, nSx: -2.8, nSz: .5, nEx: -.25, nWx: 0 }),
+    'face-smile': () => ({ curve: 1, mO: 0, brow: 0, browL: 0, eOpen: 1, slump: 0, tense: 0 }),
+    'face-sad': () => ({ curve: -.8, mO: 0, brow: -.3, browL: 0, eOpen: 1, slump: .8, tense: 0 }),
+    'face-sweat': () => ({ curve: -.6, mO: 0, brow: -.35, browL: .01, eOpen: 1, slump: .4, tense: 0 }),
+    'face-o': () => ({ curve: .1, mO: .75, brow: 0, browL: .015, eOpen: 1.1, slump: 0, tense: 0 }),
+    'face-shock': () => ({ curve: .1, mO: 1, brow: -.1, browL: .03, eOpen: 1.25, slump: 0, tense: 0 }),
+    'face-sly': () => ({ curve: .7, mO: 0, brow: .3, browL: -.005, eOpen: .62, slump: 0, tense: 0 }),
+    'face-angry': () => ({ curve: -.6, mO: 0, brow: .45, browL: -.01, eOpen: .85, slump: 0, tense: .7 }),
     'look-c': () => LOOK0,
-    'look-u': () => ({ ...LOOK0, hPitch: -.2, eY: .6 }),
+    'look-u': () => ({ ...LOOK0, hPitch: -.2, eY: .6, bLean: -.04 }),
     'look-d': () => ({ ...LOOK0, hPitch: .42, eY: -.5, bLean: .12 }),
-    'look-n': n => ({ ...LOOK0, hYaw: n * .62, eX: n * .8 }),
-    'look-palm': () => ({ ...LOOK0, hYaw: -.4, hPitch: .12, eX: -.8 }),
-    'peek': n => ({ hYaw: n * .78, hPitch: .22, eX: n, eY: -.4, bRoll: -n * .24, bYaw: n * .25, bLean: .05 }),
+    'look-n': n => ({ ...LOOK0, hYaw: n * .62, eX: n * .8, bYaw: n * .12 }),
+    'look-palm': () => ({ ...LOOK0, hYaw: -.4, hPitch: .12, hRoll: -.06, eX: -.8 }),
+    'peek': n => ({ ...LOOK0, hYaw: n * .78, hPitch: .22, eX: n, eY: -.4, bRoll: -n * .24, bYaw: n * .25, bLean: .05, plX: n * .05 }),
   };
+  // 팔·표정 토큰이 시선 토큰과 같은 채널을 덮어쓰지 않도록 더해지는 몫
+  const XA = { 'arm-up': { bRoll: -.06, hPitch: -.08 }, 'arm-down': { bLean: -.05 }, 'arm-slip': { bLean: .18 }, 'face-o': { hPitch: -.05 }, 'face-sly': { hRoll: .08 } };
   const M_REST = { pSx: 0, pSz: .45, pEx: -.5, nSx: 0, nSz: .45, nEx: -.5 };
   const TOK_M = { ...TOK,
     'arm-rest': () => M_REST,
@@ -1543,6 +1737,30 @@ const V = (() => {
     'arm-wave': () => ({ ...M_REST, pSx: -.2, pSz: 2.5, pEx: -.7 }),
     'arm-cheer': () => ({ pSx: 0, pSz: 2.5, pEx: -.3, nSx: 0, nSz: 2.5, nEx: -.3 }),
   };
+  // 1회 동작: [시각(s), 더할 값] 키프레임, 사이는 부드럽게
+  const CLIPS = {
+    up: [[0], [.12, { pSx: .15 }], [.45]],
+    down: [[0], [.12, { nWx: -.3 }], [.35]],
+    shock: [[0], [.12, { bLean: -.15, hPitch: -.12, pSx: .1, nSx: .1 }], [.6]],
+    point: [[0], [.075, { pSz: .12 }], [.15], [.225, { pSz: .12 }], [.3]],
+    ges: [[0], [.16, { pSx: -.3, pEx: .3 }], [.4]],
+  };
+  const TAU = Math.PI * 2, tmpV = new T.Vector3();
+  const sstep = (a, b, x) => { const u = clamp((x - a) / (b - a)); return u * u * (3 - 2 * u); };
+  const win = (p, a, b, e) => sstep(a, a + e, p) * (1 - sstep(b - e, b, p));   // a~b 구간에서 1, 가장자리 e 초 동안 부드럽게
+  const hash = (a, b) => { const x = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453; return x - Math.floor(x); };
+  function clipAdd(o, name, u) {   // 끝났으면 false
+    const K = CLIPS[name];
+    for (let i = 1; i < K.length; i++) if (u < K[i][0]) {
+      const a = K[i - 1], b = K[i], e = sstep(a[0], b[0], u);
+      for (const k in a[1]) o[k] = (o[k] || 0) + a[1][k] * (1 - e);
+      for (const k in b[1]) o[k] = (o[k] || 0) + b[1][k] * e;
+      return true;
+    }
+    return false;
+  }
+  const freeze = (root, live) => root.traverse(x => { if (x.isMesh && !live.includes(x)) { x.updateMatrix(); x.matrixAutoUpdate = false; } });   // 관절(그룹)만 움직이니 나머지 메시 행렬은 한 번만
+  const rigBase = () => ({ vel: {}, os: {}, flags: new Set(), clips: [], fw: { writing: 0, wiggle: 0, flip: 0, cheer: 0, wave: 0 }, armAt: 0, faceAt: 0, lookAt: 0, look: 'look-c', root: new T.Group() });
 
   function face(head, y, z, s, rig, flat) {   // 눈·눈썹·볼·입
     rig.eyes = []; rig.pupils = []; rig.brows = [];
@@ -1562,13 +1780,14 @@ const V = (() => {
     rig.smile = add(rig.mouth, new T.TorusGeometry(.04 * s, .0075 * s, 8, 20, Math.PI), INK, null, { rot: [0, 0, Math.PI], cast: false });
     rig.open = add(rig.mouth, new T.CircleGeometry(.036 * s, 24), new T.MeshBasicMaterial({ color: '#7a2e2e' }), [0, -.012 * s, .002], { cast: false });
   }
-  function arm(body, sx, y, x, r, l1, l2, sleeve, skin, hand) {
+  function arm(body, sx, y, x, r, l1, l2, sleeve, skin, hand, ol) {   // 어깨 → 팔꿈치 → 손목
     const sh = grp(body, [sx * x, y, 0]);
-    add(sh, cap(r, l1 - r * 1.2), sleeve, [0, -l1 / 2, 0]);
+    add(sh, cap(r, l1 - r * 1.2), sleeve, [0, -l1 / 2, 0], { ol });
     const el = grp(sh, [0, -l1, 0]);
-    add(el, cap(r * .9, l2 - r * 1.2), skin, [0, -l2 / 2, 0]);
-    const h = add(el, sph(hand), skin === INK ? '#ffffff' : skin, [0, -l2 - hand * .3, 0]);
-    return { sh, el, hand: h };
+    add(el, cap(r * .9, l2 - r * 1.2), skin, [0, -l2 / 2, 0], { ol });
+    const wr = grp(el, [0, -l2, 0]);
+    const h = add(wr, sph(hand), skin === INK ? '#ffffff' : skin, [0, -hand * .3, 0], { ol });
+    return { sh, el, wr, hand: h };
   }
   function bubbleNode() {
     const st = { text: '' };
@@ -1587,19 +1806,23 @@ const V = (() => {
     n.userData = { st, tex };
     return n;
   }
-  function makeKid({ hair, shirt, style = 'short', nb = 0, seed = 0, skin = SKIN, tie = true }) {
-    const rig = { kind: 'kid', tok: TOK, nb, seed, cur: { ...P0 }, vel: {}, tgt: { ...P0 }, flags: new Set(), blinkAt: 1 + seed, root: new T.Group() };
+  function makeKid({ hair, shirt, style = 'short', nb = 0, seed = 0, skin = SKIN, tie = true, ol = true }) {
+    const rig = { kind: 'kid', tok: TOK, nb, seed, cur: { ...P0 }, tgt: { ...P0 }, blinkAt: 1 + seed, ...rigBase() };
+    toon = true; olOn = ol;
     const root = rig.root, wood = '#b07f53', metal = '#6b6f78', mo = { metalness: .35, roughness: .5 };
     const sk = { roughness: .7 }, hm = { roughness: .55, side: T.DoubleSide }, cloth = { roughness: .9 };
     add(root, box(.42, .04, .42), wood, [0, .44, -.03], { receive: true });
     add(root, box(.42, .3, .03), wood, [0, .76, -.25]);
     for (const [x, z] of [[-.19, -.22], [.19, -.22], [-.19, .16], [.19, .16]]) add(root, cyl(.015, .015, .44, 8), metal, [x, .22, z], { mat: mo });
     for (const sx of [-.19, .19]) add(root, cyl(.013, .013, .36, 8), metal, [sx, .66, -.24], { mat: mo });
-    for (const sx of [1, -1]) {   // 다리
-      add(root, cap(.072, .2), '#2a2f3a', [sx * .1, .5, .16], { rot: [Math.PI / 2, 0, 0], mat: cloth });
-      add(root, cap(.058, .26), '#2a2f3a', [sx * .1, .3, .33], { mat: cloth });
-      add(root, sph(.075), '#3a3f4b', [sx * .1, .06, .38], { scale: [1, .7, 1.5], mat: { roughness: .5 } });
-    }
+    rig.legs = [1, -1].map(sx => {   // 다리: 허벅지 → 무릎 → 발목. root 에 붙여서 몸을 숙여도 엉덩이가 의자에서 뜨지 않는다
+      const th = grp(root, [sx * .1, .5, -.01]); th.rotation.x = -Math.PI / 2;
+      add(th, cap(.072, .2), '#2a2f3a', [0, -.17, 0], { mat: cloth, ol: true });
+      const kn = grp(th, [0, -.34, 0]); kn.rotation.x = Math.PI / 2;
+      add(kn, cap(.058, .26), '#2a2f3a', [0, -.2, 0], { mat: cloth, ol: true });
+      add(grp(kn, [0, -.44, 0]), sph(.075), '#3a3f4b', [0, 0, .05], { scale: [1, .7, 1.5], mat: { roughness: .5 }, ol: true });
+      return { th, kn };
+    });
     // 책상(학생 앞쪽 = +z)
     const desk = rig.desk = grp(root, [0, 0, .52]);
     add(desk, box(.98, .04, .58), '#d7a86e', [0, .74, 0], { receive: true, mat: { roughness: .6 } });
@@ -1607,15 +1830,16 @@ const V = (() => {
     add(desk, box(.9, .03, .46), '#a8733f', [0, .6, .02]);
     for (const [x, z] of [[-.44, -.24], [.44, -.24], [-.44, .24], [.44, .24]]) add(desk, cyl(.017, .017, .74, 8), metal, [x, .37, z], { mat: mo });
     rig.paper = add(desk, box(.24, .004, .32), PAPER, [0, .764, -.04], { receive: true });
-    // 몸: 재킷 + 흰 깃 + 넥타이/리본
-    const body = rig.body = grp(root, [0, .49, 0]);
-    add(body, cap(.165, .24), shirt, [0, .27, 0], { scale: [1.12, 1, .85], mat: cloth });
-    add(body, new T.TorusGeometry(.075, .024, 8, 20), PAPER, [0, .515, .01], { rot: [Math.PI / 2, 0, 0], cast: false });
-    add(body, new T.CircleGeometry(.075, 3), PAPER, [0, .45, .142], { rot: [-.25, 0, -Math.PI / 2], scale: [1.25, 1, 1], cast: false });
-    if (tie) add(body, box(.036, .15, .012), '#b8322b', [0, .41, .15], { rot: [-.28, 0, 0], cast: false });
-    else for (const sx of [1, -1]) add(body, box(.06, .03, .014), '#b8322b', [sx * .03, .49, .148], { rot: [-.3, 0, sx * .35], cast: false });
-    add(body, cyl(.052, .052, .1, 12), skin, [0, .55, 0], { mat: sk });
-    const head = rig.head = grp(body, [0, .58, 0]);
+    // 몸: 엉덩이 → 허리 → 목 → 머리. 재킷 + 흰 깃 + 넥타이/리본
+    const hips = rig.hips = grp(root, [0, .49, 0]), body = rig.spine = grp(hips, [0, .04, 0]);
+    add(body, cap(.165, .24), shirt, [0, .23, 0], { scale: [1.12, 1, .85], mat: cloth, ol: true });
+    add(body, new T.TorusGeometry(.075, .024, 8, 20), PAPER, [0, .475, .01], { rot: [Math.PI / 2, 0, 0], cast: false });
+    add(body, new T.CircleGeometry(.075, 3), PAPER, [0, .41, .142], { rot: [-.25, 0, -Math.PI / 2], scale: [1.25, 1, 1], cast: false });
+    if (tie) add(body, box(.036, .15, .012), '#b8322b', [0, .37, .15], { rot: [-.28, 0, 0], cast: false });
+    else for (const sx of [1, -1]) add(body, box(.06, .03, .014), '#b8322b', [sx * .03, .45, .148], { rot: [-.3, 0, sx * .35], cast: false });
+    const neck = rig.neck = grp(body, [0, .46, 0]);
+    add(neck, cyl(.052, .052, .1, 12), skin, [0, .05, 0], { mat: sk });
+    const head = rig.head = grp(neck, [0, .08, 0]);
     add(head, sph(.25, 32, 24), skin, [0, .22, 0], { scale: [1, .96, .95], mat: sk });
     for (const sx of [1, -1]) add(head, sph(.045, 12, 10), skin, [sx * .243, .2, 0], { mat: sk });
     const cut = new T.SphereGeometry(.264, 32, 20, 0, Math.PI * 2, 0, 1.72);
@@ -1625,83 +1849,168 @@ const V = (() => {
     if (style === 'pony') { add(head, sph(.09), hair, [0, .34, -.27], { mat: hm }); add(head, cap(.06, .2), hair, [0, .16, -.33], { rot: [.35, 0, 0], mat: hm }); }
     if (style === 'twin') for (const sx of [1, -1]) add(head, sph(.1), hair, [sx * .27, .12, -.04], { scale: [1, 1.2, 1], mat: hm });
     if (style === 'curly') [[-.16, .42, 0], [0, .47, .02], [.16, .42, 0], [-.1, .44, -.14], [.1, .44, -.14], [0, .4, .16]].forEach(p => add(head, sph(.1, 16, 12), hair, p, { mat: hm }));
+    // 외곽선: 머리·귀·앞머리·머리 덩어리(열린 머리카락 껍질은 제외)
+    if (olOn) head.children.filter(m => !(m.geometry.parameters.thetaLength < Math.PI)).forEach(m => outline(m, m.geometry));
     face(head, .235, .222, 1, rig);
     rig.sweat = add(head, sph(.026, 16, 12), '#8fc3e0', [.19, .3, .17], { scale: [.8, 1.35, .7], cast: false, mat: { roughness: .2 } });
     rig.ear = add(head, sph(.035, 12, 10), PAPER, [-.262, .2, .01], { scale: [.7, 1, 1] });
-    rig.arms = { p: arm(body, 1, .45, .2, .052, .22, .24, shirt, skin, .055), n: arm(body, -1, .45, .2, .052, .22, .24, shirt, skin, .055) };
-    rig.pen = add(rig.arms.n.el, cyl(.009, .009, .16, 8), '#2b4fa8', [.02, -.22, .06], { rot: [.9, 0, -.3] });
-    rig.held = phoneModel(); rig.held.position.set(0, -.34, .03); rig.arms.p.el.add(rig.held);
-    rig.lap = phoneModel(); rig.lap.position.set(.03, -.3, .05); rig.lap.rotation.set(-1.2, 0, 0); rig.arms.n.el.add(rig.lap);
-    rig.note = add(rig.arms.n.el, box(.11, .14, .004), '#f3e6b0', [.02, -.31, .05], { rot: [-1.0, 0, 0] });
-    rig.palm = add(rig.arms.n.el, new T.CircleGeometry(.04, 16), new T.MeshBasicMaterial({ color: '#2b4fa8' }), [.0, -.255, .057], { scale: [1, .25, 1], cast: false });
+    rig.arms = { p: arm(body, 1, .41, .2, .052, .22, .24, shirt, skin, .055, true), n: arm(body, -1, .41, .2, .052, .22, .24, shirt, skin, .055, true) };
+    const wn = rig.arms.n.wr;
+    rig.pen = add(wn, cyl(.009, .009, .16, 8), '#2b4fa8', [.02, .02, .06], { rot: [.9, 0, -.3] });
+    rig.held = phoneModel(); rig.held.position.set(0, -.1, .03); rig.arms.p.wr.add(rig.held);
+    rig.lap = phoneModel(); rig.lap.position.set(.03, -.06, .05); rig.lap.rotation.set(-1.2, 0, 0); wn.add(rig.lap);
+    const scr = rig.lap.children[1]; scr.material = scr.material.clone(); rig.lapScr = scr.material;   // 깜빡이는 화면은 따로
+    rig.note = add(wn, box(.11, .14, .004), '#f3e6b0', [.02, -.07, .05], { rot: [-1.0, 0, 0] });
+    rig.palm = add(wn, new T.CircleGeometry(.04, 16), new T.MeshBasicMaterial({ color: '#2b4fa8' }), [.0, -.015, .057], { scale: [1, .25, 1], cast: false });
     rig.watch = add(rig.arms.n.el, cyl(.058, .058, .04, 16), '#3a3f4b', [0, -.17, 0], { mat: { emissive: '#9fc6c9', emissiveIntensity: .6 } });
     rig.bubble = bubbleNode(); rig.bubble.position.set(.44, 1.5, 0); root.add(rig.bubble);
     rig.stamp = plane(canvasTex(128, 128, (ctx, rd) => { const im = markImg('x', rd); if (im) ctx.drawImage(im, 0, 0, 128, 128); }), .26, .26);
     rig.stamp.position.set(-.36, 1.5, .2); rig.stamp.renderOrder = 6; rig.stamp.material.depthTest = false; root.add(rig.stamp);
+    freeze(root, [rig.paper, rig.smile, rig.open, rig.bubble, rig.stamp, ...rig.brows]);
+    toon = olOn = false;
     return rig;
   }
   function makeMascot() {
-    const rig = { kind: 'mascot', tok: TOK_M, nb: 0, seed: 2.2, cur: { ...P0, ...M_REST }, vel: {}, tgt: { ...P0, ...M_REST }, flags: new Set(), blinkAt: 2, root: new T.Group() };
+    const rig = { kind: 'mascot', tok: TOK_M, nb: 0, seed: 2.2, cur: { ...P0, ...M_REST }, tgt: { ...P0, ...M_REST }, blinkAt: 2, ...rigBase() };
+    toon = olOn = true;
     const root = rig.root, hex = (a, b, h) => { const g = cyl(a, b, h, 6); g.rotateY(Math.PI / 6); return g; };
+    const flat = g => { g = g.toNonIndexed(); g.computeVertexNormals(); return g; };   // 툰 재질엔 flatShading 이 없어서 면마다 법선을 따로 둔다
     for (const sx of [1, -1]) { add(root, cyl(.018, .018, .16, 8), NAVY, [sx * .09, .1, 0]); add(root, sph(.07), RED, [sx * .09, .04, .04], { scale: [1, .6, 1.5], mat: { roughness: .5 } }); }
     const body = rig.body = grp(root, [0, .16, 0]), ferrule = { metalness: .6, roughness: .35 };
-    add(body, cyl(.19, .19, .12, 24), '#e58a8a', [0, .06, 0], { mat: { roughness: .9 } });
+    add(body, cyl(.19, .19, .12, 24), '#e58a8a', [0, .06, 0], { mat: { roughness: .9 }, ol: true });
     add(body, cyl(.205, .205, .08, 24), '#c0c4c8', [0, .16, 0], { mat: ferrule });
     for (const y of [.13, .19]) add(body, cyl(.209, .209, .012, 24), '#a7abb0', [0, y, 0], { mat: ferrule, cast: false });
-    add(body, hex(.2, .2, .6), '#f2b42c', [0, .49, 0], { mat: { roughness: .5, flatShading: true } });
-    add(body, hex(.203, .203, .012), '#d99a1c', [0, .79, 0], { mat: { roughness: .5, flatShading: true }, cast: false });
-    add(body, hex(0, .2, .3), '#e8c9a0', [0, .94, 0], { mat: { roughness: .85, flatShading: true } });
-    add(body, cyl(0, .068, .102, 6), LINE, [0, 1.04, 0], { rot: [0, Math.PI / 6, 0], mat: { roughness: .6, flatShading: true } });
+    const hb = hex(.2, .2, .6), hw = hex(0, .2, .3);
+    add(body, flat(hb), '#f2b42c', [0, .49, 0], { mat: { roughness: .5, flatShading: true }, ol: hb });
+    add(body, flat(hex(.203, .203, .012)), '#d99a1c', [0, .79, 0], { mat: { roughness: .5, flatShading: true }, cast: false });
+    add(body, flat(hw), '#e8c9a0', [0, .94, 0], { mat: { roughness: .85, flatShading: true }, ol: hw });
+    add(body, flat(cyl(0, .068, .102, 6)), LINE, [0, 1.04, 0], { rot: [0, Math.PI / 6, 0], mat: { roughness: .6, flatShading: true } });
     rig.head = grp(body, [0, .3, 0]);
     face(rig.head, .32, .176, .85, rig, true);
     rig.sweat = new T.Group(); rig.ear = new T.Group();
     rig.arms = { p: arm(body, 1, .56, .19, .022, .2, .2, INK, INK, .045), n: arm(body, -1, .56, .19, .022, .2, .2, INK, INK, .045) };
+    freeze(root, [rig.smile, rig.open, ...rig.brows]);
+    toon = olOn = false;
     return rig;
   }
-  function setTokens(rig, str) {
+  // ago = 그 동작이 몇 초 전에 일어났어야 하는지(되감기·장면 중간 진입). 1회 동작·루프의 시작 시각을 그만큼 앞당긴다
+  function setTokens(rig, str, ago = 0) {
+    const now = clock - ago, wasW = rig.flags.has('writing'), clip = name => rig.clips.push({ name, t0: now });
     for (const tk of str.split(' ').filter(Boolean)) {
       if (tk.startsWith('bub:')) { const b = rig.bubble; if (!b) continue; rig.bub = tk.slice(4); if (rig.bub) { b.userData.st.text = rig.bub; b.userData.tex.redraw(); } continue; }
       if (tk[0] === '!') { rig.flags.delete(tk.slice(1)); continue; }
       const f = rig.tok[tk];
       if (f) {
         Object.assign(rig.tgt, f(rig.nb));
-        if (tk.startsWith('face-')) rig.face = tk;
-        if (tk.startsWith('arm-')) rig.armTok = tk;
+        if (tk.startsWith('face-')) {
+          if (tk !== rig.face) rig.faceAt = now;
+          rig.face = tk;
+          if (tk === 'face-shock') clip('shock');
+        }
+        if (tk.startsWith('arm-')) {
+          if (tk !== rig.armTok) { rig.armAt = now; if (tk === 'arm-up') clip('up'); if (tk === 'arm-down' && wasW) clip('down'); }
+          if (tk === 'arm-point') clip('point');
+          rig.armTok = tk;
+        }
+        if (tk.startsWith('look-') || tk === 'peek') { if (tk !== rig.look) rig.lookAt = now; rig.look = tk; }
       } else rig.flags.add(tk);
-      if (tk === 'caught') rig.caughtAt = clock;
-      if (tk === 'jump') rig.jumpAt = clock;
+      if (tk === 'caught') rig.caughtAt = now;
+      if (tk === 'jump') rig.jumpAt = now;
     }
   }
   function resetRig(rig, str) {
-    rig.flags.clear(); rig.bub = ''; rig.face = 'face-smile'; rig.armTok = 'arm-rest';
-    Object.assign(rig.tgt, P0, rig.kind === 'mascot' ? M_REST : REST);
+    rig.flags.clear(); rig.bub = ''; rig.face = 'face-smile'; rig.armTok = 'arm-rest'; rig.look = 'look-c';
+    Object.assign(rig.tgt, P0, rig.tok['arm-rest']());
     setTokens(rig, str || '');
   }
-  const snapRig = rig => { Object.assign(rig.cur, rig.tgt); rig.vel = {}; rig.bubS = rig.bub ? 1 : 0; };
-  function applyRig(rig, dt, talk) {
-    const c = rig.cur, f = rig.flags, t = clock, s = rig.seed, m = rig.kind === 'mascot';
-    for (const k in rig.tgt) {   // 스프링: 살짝 넘쳤다가 돌아오며 멈춘다
-      const v = (rig.vel[k] || 0) + ((rig.tgt[k] - c[k]) * 110 - (rig.vel[k] || 0) * 15) * dt;
-      rig.vel[k] = v; c[k] += v * dt;
+  const goal = (rig, k) => rig.tgt[k] + ((XA[rig.armTok] || {})[k] || 0) + ((XA[rig.face] || {})[k] || 0);
+  const snapRig = rig => {
+    for (const k in rig.tgt) rig.cur[k] = goal(rig, k);
+    for (const k in rig.fw) rig.fw[k] = rig.flags.has(k) ? 1 : 0;
+    rig.vel = {}; rig.bubS = rig.bub ? 1 : 0; rig.snapO = true;
+  };
+  // 최종 자세 = 스프링(목표 자세) + 루프(시각) + 1회 동작
+  function applyRig(rig, dt, talk, vt) {
+    const c = rig.cur, f = rig.flags, t = clock, s = rig.seed, m = rig.kind === 'mascot', n = rig.nb, W = rig.fw;
+    const steps = dt > 1 / 60 ? 2 : 1, h = dt / steps;
+    for (let i = 0; i < steps; i++) for (const k in rig.tgt) {   // 스프링: 살짝 넘쳤다가 돌아오며 멈춘다
+      const [K, D] = SPR[k], v = clamp((rig.vel[k] || 0) + ((goal(rig, k) - c[k]) * K - (rig.vel[k] || 0) * D) * h, -5, 5);   // 장면 전환의 긴 프레임에도 한 번에 튀지 않게 속도 상한
+      rig.vel[k] = v; c[k] += v * h;
     }
-    const wr = f.has('writing') ? 1 : 0, wig = f.has('wiggle') ? 1 : 0, ju = clamp((t - (rig.jumpAt ?? -9)) / 1.5);
-    const hop = ju < 1 ? Math.abs(Math.sin(ju * Math.PI * 3)) * .22 * (1 - ju * .5) : 0;
-    rig.root.position.y = hop + (f.has('cheer') ? Math.abs(Math.sin(t * 6.5 + s)) * .07 : 0) + (m ? talk * .025 + Math.sin(t * 2 + s) * .008 : 0);
-    rig.body.rotation.set(c.bLean + (m ? c.hPitch * .4 + talk * .04 : 0) + wig * Math.sin(t * 8) * .03,
-      c.bYaw + (m ? c.hYaw * .6 + Math.sin(t * 1.3) * .05 : 0) + wig * Math.sin(t * 9) * .1, c.bRoll + wig * Math.sin(t * 9 + 1) * .07 + (m ? Math.sin(t * 1.7) * .03 : 0));
-    rig.body.scale.y = 1 + Math.sin(t * 1.7 + s) * .012 - hop * .1;
-    if (!m) rig.head.rotation.set(c.hPitch - talk * .07 + Math.sin(t * 6.3 + s) * .03 * talk + wr * Math.sin(t * 1.9 + s) * .03,
-      c.hYaw + Math.sin(t * 2.3 + s) * .06 * talk + Math.sin(t * .6 + s) * .03, Math.sin(t * .8 + s) * .03 + Math.sin(t * 4.1) * .04 * talk);
-    const A = rig.arms, wave = f.has('wave') ? Math.sin(t * 9) * .3 : 0, ges = m ? talk * Math.sin(t * 5) * .18 : 0;
-    A.p.sh.rotation.set(c.pSx + ges * .4, 0, c.pSz + wave + ges);
-    A.p.el.rotation.x = c.pEx - Math.abs(wave) * .3;
-    A.n.sh.rotation.set(c.nSx + wr * Math.sin(t * 11 + s) * .02 - ges * .3, 0, -c.nSz + wr * Math.sin(t * 13 + s) * .035 - ges * .6);
-    A.n.el.rotation.x = c.nEx + wr * Math.sin(t * 12 + s) * .05;
-    if (t > rig.blinkAt) rig.blinkAt = t + 2 + ((s * 7 + t * 13) % 3);
-    const eo = f.has('yawn') ? .12 : c.eOpen * (rig.blinkAt - t < .12 ? .1 : 1);
+    for (const k in W) W[k] += ((f.has(k) ? 1 : 0) - W[k]) * Math.min(1, dt * 8);   // 플래그 켜고 끌 때 튀지 않게
+    const o = {}, ad = (k, x) => { o[k] = (o[k] || 0) + x; };
+    rig.clips = rig.clips.filter(cl => clipAdd(o, cl.name, t - cl.t0));
+    // 팔 토큰 루프
+    const A = rig.armTok, at = t - rig.armAt;
+    if (A === 'arm-up') ad('pWx', .15 * Math.sin(TAU * 2 * at) * clamp(1 - at / 1.2));
+    else if (A === 'arm-palm') { const w = win(at % 2.4, 1.6, 2.0, .12); ad('nSx', .25 * w); ad('eY', .6 * w); }
+    else if (A === 'arm-slip') { ad('hPitch', -.35 * win(at % 3, 2.4, 2.8, .1)); ad('nWx', .08 * Math.sin(TAU * 3 * t)); }
+    else if (A === 'arm-hold') ad('pWx', .06 * Math.sin(TAU * 1.6 * t));
+    else if (A === 'arm-cheer') { ad('pEx', .3 * Math.sin(TAU * 4 * t)); ad('nEx', -.3 * Math.sin(TAU * 4 * t)); }
+    // 표정·시선 루프
+    if (rig.face === 'face-sweat') ad('hYaw', .05 * Math.sin(TAU * 1.3 * t));
+    if (rig.face === 'face-sly' && !m) {   // 3초마다 카메라 쪽으로 슬쩍 눈동자
+      const w = win((t - rig.faceAt) % 3, 2.5, 2.8, .06);
+      if (w) ad('eX', (Math.sign(rig.head.worldToLocal(tmpV.copy(camera.position)).x) * .7 - c.eX) * w);
+    }
+    if (rig.look === 'peek') ad('hYaw', -n * .6 * win((t - rig.lookAt) % 2.6 / 2.6, .7, .85, .03));   // 감독 쪽 흘끔
+    // 플래그
+    if (W.writing > .001) {   // 한 줄 1.6초: 손이 옆으로 가다 빠르게 돌아온다. 4줄마다 잠깐 쉼
+      const x = t / 1.6 + s, L = Math.floor(x), u = x - L, rest = L % 4 === 3 && u < .25, j = rest ? 0 : W.writing;
+      ad('nSz', W.writing * (rest ? -.1 : u < .88 ? -.1 + .2 * u : -.1 + .176 * (1 - (u - .88) / .12)));
+      ad('nSx', j * .02 * Math.sin(TAU * 7 * t)); ad('nEx', j * .05 * Math.sin(TAU * 5.3 * t + s)); ad('hPitch', W.writing * .02 * Math.sin(TAU * x));
+      if (rest) ad('nWx', -.15 * W.writing * win(u, 0, .25, .05));
+    }
+    if (W.wiggle > .001) { const w = W.wiggle; ad('plX', w * .03 * Math.sin(TAU * 4 * t)); ad('kneeL', w * .1 * Math.sin(TAU * 5 * t)); ad('kneeR', -w * .1 * Math.sin(TAU * 5 * t)); ad('bRoll', w * .05 * Math.sin(TAU * 4 * t + 1)); }
+    if (W.flip > .001) { const ph = Math.sin(t * 5 + s); ad('nSx', W.flip * (-.75 - c.nSx + .15 * ph)); ad('nEx', W.flip * (-1.1 - c.nEx + .2 * ph)); }
+    if (W.cheer > .001) { ad('kneeL', .15 * W.cheer); ad('kneeR', .15 * W.cheer); }
+    if (f.has('has-phone')) { ad('nWx', .05 * Math.sin(TAU * 3 * t)); rig.lapScr.emissiveIntensity = .5 + .2 * Math.sin(TAU * 1.5 * t); }
+    // 공통 대기: 시선 흔들림(재생 시각으로 정해져 되감아도 같다)·몸 흔들림·말할 때 고개
+    const g = Math.floor(vt / 2.4);
+    ad('eX', (hash(s, g) - .5) * .3); ad('eY', (hash(s + 7.1, g) - .5) * .3);
+    ad('plYaw', .035 * Math.sin(TAU * t / 7 + s));
+    ad('browL', talk * .012);
+    if (!m) {
+      ad('hPitch', -talk * .07 + Math.sin(t * 6.3 + s) * .03 * talk); ad('hYaw', Math.sin(t * 2.3 + s) * .06 * talk + Math.sin(t * .6 + s) * .03);
+      ad('hRoll', Math.sin(t * .8 + s) * .03 + Math.sin(t * 4.1) * .04 * talk);
+      if (talk > .35 && (rig.prevTalk || 0) <= .35 && t - (rig.gesAt ?? -9) > 1.2 && A === 'arm-rest' && !f.has('writing')) { rig.gesAt = t; rig.clips.push({ name: 'ges', t0: t }); }
+      rig.prevTalk = talk;
+    }
+    // 루프·1회 동작 몫은 40ms 저역 통과: 토큰이 바뀌어 루프가 켜지고 꺼질 때 튀지 않게(되감기 직후엔 바로 맞춤)
+    const os = rig.os, ke = rig.snapO ? 1 : 1 - Math.exp(-dt * 25);
+    rig.snapO = false;
+    for (const k in o) if (!(k in os)) os[k] = 0;
+    for (const k in os) os[k] += ((o[k] || 0) - os[k]) * ke;
+    const v = k => c[k] + (os[k] || 0);
+    const ju = clamp((t - (rig.jumpAt ?? -9)) / 1.5), hop = ju < 1 ? Math.abs(Math.sin(ju * Math.PI * 3)) * .22 * (1 - ju * .5) : 0;
+    const AR = rig.arms;
+    if (m) {
+      rig.root.position.y = hop + talk * .025 + Math.sin(t * 2 + s) * .008;
+      rig.body.rotation.set(v('bLean') + v('hPitch') * .4 + talk * .04, v('bYaw') + v('hYaw') * .6 + Math.sin(t * 1.3) * .05, v('bRoll') + Math.sin(t * 1.7) * .03);
+      rig.body.scale.y = 1 + Math.sin(t * 1.7 + s) * .012 - hop * .1;
+      const wave = W.wave * Math.sin(t * 9) * .3, ges = talk * Math.sin(t * 5) * .18;
+      AR.p.sh.rotation.set(v('pSx') + ges * .4, 0, v('pSz') + wave + ges);
+      AR.p.el.rotation.x = v('pEx') - Math.abs(wave) * .3;
+      AR.n.sh.rotation.set(v('nSx') - ges * .3, 0, -v('nSz') - ges * .6);
+      AR.n.el.rotation.x = v('nEx');
+    } else {
+      rig.root.position.y = hop;
+      rig.hips.position.set(v('plX'), .49 + W.cheer * Math.abs(Math.sin(t * 6.5 + s)) * .07, 0);
+      rig.hips.rotation.y = v('plYaw') + .25 * v('bYaw');
+      rig.spine.rotation.set(v('bLean') + .12 * v('slump') + .1 * v('tense') + .012 * Math.sin(TAU * t / 3.6 + s), .75 * v('bYaw'), v('bRoll'));
+      const hp = v('hPitch'), hy = v('hYaw'), hr = v('hRoll'), sl = .06 * v('slump') + .08 * v('tense');
+      rig.neck.rotation.set(.35 * hp, .35 * hy, .35 * hr); rig.head.rotation.set(.65 * hp, .65 * hy, .65 * hr);
+      AR.p.sh.rotation.set(v('pSx'), 0, v('pSz') - sl); AR.p.el.rotation.x = v('pEx'); AR.p.wr.rotation.x = v('pWx');
+      AR.n.sh.rotation.set(v('nSx'), 0, -(v('nSz') - sl)); AR.n.el.rotation.x = v('nEx'); AR.n.wr.rotation.x = v('nWx');
+      [v('kneeL'), v('kneeR')].forEach((kv, i) => { rig.legs[i].th.rotation.x = -Math.PI / 2 - kv; rig.legs[i].kn.rotation.x = Math.PI / 2 + .6 * kv; });
+    }
+    // 눈 깜빡임(20%는 두 번)·눈동자·눈썹·입
+    if (t > rig.blinkAt) { rig.lastBlink = rig.blinkAt; rig.dbl = hash(s, rig.blinkAt) < .2; rig.blinkAt = t + 2 + ((s * 7 + t * 13) % 3); }
+    const sinceB = t - (rig.lastBlink ?? -9), shut = rig.blinkAt - t < .12 || (rig.dbl && sinceB > .1 && sinceB < .22);
+    const eo = f.has('yawn') ? .12 : v('eOpen') * (shut ? .1 : 1);
     rig.eyes.forEach(e => e.scale.y = Math.max(.08, eo));
-    rig.pupils.forEach(p => p.position.set(c.eX * .014, c.eY * .012, p.position.z));
-    rig.brows.forEach((b, i) => { b.rotation.z = (i ? -1 : 1) * c.brow; b.position.y = b.userData.y0 + c.browL; });
+    rig.pupils.forEach(p => p.position.set(v('eX') * .014, v('eY') * .012, p.position.z));
+    rig.brows.forEach((b, i) => { b.rotation.z = (i ? -1 : 1) * v('brow'); b.position.y = b.userData.y0 + v('browL'); });
     const open = Math.max(c.mO, talk);
     rig.open.visible = open > .1; rig.smile.visible = !rig.open.visible;
     rig.open.scale.set(1 - .3 * c.mO + talk * .1, Math.max(.2, open), 1);
@@ -1827,7 +2136,6 @@ const V = (() => {
     scene.add(new T.HemisphereLight('#fff4e4', '#7d6146', .5));
     const sun = new T.DirectionalLight('#ffe6bf', 1.4);
     sun.position.set(-4, 5.5, 1.5); sun.target.position.set(.5, .5, -.5); scene.add(sun.target);
-    const low = (navigator.hardwareConcurrency || 8) <= 4 || Math.min(screen.width, screen.height) < 820;
     sun.castShadow = true; sun.shadow.mapSize.setScalar(low ? 1024 : 2048); sun.shadow.bias = -.0004; sun.shadow.radius = 4;
     Object.assign(sun.shadow.camera, { left: -6, right: 6, top: 6, bottom: -6, near: 1, far: 16 });
     scene.add(sun);
@@ -1837,8 +2145,8 @@ const V = (() => {
     const kid = (id, o, x, z) => { const r = makeKid(o); r.root.position.set(x, 0, z); r.root.rotation.y = Math.PI; r.baseY = 0; scene.add(r.root); return r; };
     chars.jun = kid('jun', { hair: '#1d1a19', shirt: '#2c3a5c', skin: '#f6d2b4', style: 'short', nb: -1, seed: .3 }, -.4, 0);
     chars.sol = kid('sol', { hair: '#4a3426', shirt: '#5a3d3a', skin: '#f9dcc4', style: 'bob', tie: false, nb: 1, seed: 1.9 }, 1.4, 0);
-    [['#2e2420', '#3d4f3a', '#e2b08a', 'curly', -1.35], ['#6b4a33', '#2f4b5e', '#eec3a1', 'pony', .5], ['#151820', '#7a5a3a', '#d9a27c', 'twin', 2.35]].forEach(([hair, shirt, skin, style, x], i) =>
-      bgKids.push(kid('bg' + i, { hair, shirt, skin, style, tie: !i, nb: i ? -1 : 1, seed: 3 + i * 1.3 }, x, 1.75)));
+    [['#2e2420', '#3d4f3a', '#e2b08a', 'curly', -1.8], ['#6b4a33', '#2f4b5e', '#eec3a1', 'pony', .5], ['#151820', '#7a5a3a', '#d9a27c', 'twin', 2.8]].forEach(([hair, shirt, skin, style, x], i) =>
+      bgKids.push(kid('bg' + i, { hair, shirt, skin, style, tie: !i, nb: i ? -1 : 1, seed: 3 + i * 1.3, ol: !low }, x, 1.9)));
     chars.mascot = makeMascot();
     chars.mascot.root.position.set(-1.45, 0, -2.9); chars.mascot.root.rotation.y = .25;
     scene.add(chars.mascot.root);
@@ -1847,13 +2155,13 @@ const V = (() => {
 
   /* ───────── 카메라 ───────── */
   const SHOTS = {   // [위치, 바라보는 곳]. z>0 은 교실 뒤에서 칠판 쪽, z<0 은 칠판 쪽에서 학생 쪽
-    wide: [[.5, 2.45, 4.1], [.5, 1.5, -4]],
+    wide: [[.5, 3.0, 3.3], [.5, 1.2, -3.2]],
     board: [[.3, 2.1, 1.15], [.3, 1.7, -4]],
     host: [[-.7, 1.2, -.35], [-1.38, .78, -2.9]],
-    kids: [[.5, 1.55, -3.1], [.5, 1.1, 0]],
+    kids: [[.5, 1.55, -3.3], [.5, 1.2, 0]],
     floor: [[.5, 1.75, -3.9], [.5, .6, -.6]],
-    jun: [[-.95, 1.28, -2.15], [-.4, 1.04, 0]],
-    sol: [[1.95, 1.28, -2.15], [1.4, 1.04, 0]],
+    jun: [[-.4, 1.4, -2.3], [-.2, 1.05, 0]],
+    sol: [[1.4, 1.4, -2.3], [1.2, 1.05, 0]],
   };
   function setShot(name, snap) {
     const s = SHOTS[name], cut = snap || !cam.shot || Math.sign(SHOTS[cam.shot][0][2]) !== Math.sign(s[0][2]);
@@ -1983,23 +2291,25 @@ const V = (() => {
     stage = new T.Group(); scene.add(stage); objs = {};
   }
   function doAct(e) {
-    const [id, cmd] = e.a;
+    const [id, cmd] = e.a, ago = Math.max(0, audio.currentTime - e.t);
     if (id === 'cam') return setShot(cmd, false);
     if (id === 'title') return setTitle(cmd);
-    if (id === 'bg') return bgKids.forEach(r => setTokens(r, cmd));
-    if (chars[id]) return setTokens(chars[id], cmd);
+    if (id === 'bg') return bgKids.forEach(r => setTokens(r, cmd, ago));
+    if (chars[id]) return setTokens(chars[id], cmd, ago);
     const o = objs[id];
     o.cmd = cmd; o.t0 = e.t;
     if (cmd === 'fly') o.node.visible = true;
   }
-  function enterScene(si, t) {
-    const sc = SC[SCENE_IDS[si]];
+  // snap = 되감기·건너뛰기: 자세를 바로 맞춘다. 이어 재생이면 목표만 바꿔 스프링으로 넘어간다(카메라는 늘 컷)
+  function enterScene(si, t, snap) {
+    const sc = SC[SCENE_IDS[si]], all = Object.values(chars).concat(bgKids);
     clearStage();
     sc.build(api);
     setTitle(sc.title);
     const init = sc.init || {};
     for (const id in chars) resetRig(chars[id], init[id]);
     bgKids.forEach(r => resetRig(r, init.bg));
+    if (snap) all.forEach(r => r.clips = []);
     timeline = [];
     CUES.filter(c => c.s === si).forEach(c => {
       const b = sc.beats[c.b];
@@ -2010,7 +2320,7 @@ const V = (() => {
     tlPos = 0; sceneIdx = si; cam.shot = '';
     while (tlPos < timeline.length && timeline[tlPos].t <= t) doAct(timeline[tlPos++]);
     cam.pos.copy(cam.tpos); cam.look.copy(cam.tlook);
-    Object.values(chars).concat(bgKids).forEach(snapRig);
+    if (snap) all.forEach(snapRig);
   }
   const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
   function frame(now) {
@@ -2021,15 +2331,16 @@ const V = (() => {
     let i = 0;
     while (i + 1 < CUES.length && CUES[i + 1].t <= t) i++;
     const c = CUES[i];
-    if (c.s !== sceneIdx || t < lastT - .05) enterScene(c.s, t);
+    const snap = sceneIdx < 0 || t < lastT - .05 || t - lastT > .5;
+    if (c.s !== sceneIdx || snap) enterScene(c.s, t, true); // 장면 전환은 카메라가 컷이므로 자세도 컷(스프링으로 휘두르지 않음)
     else while (tlPos < timeline.length && timeline[tlPos].t <= t) doAct(timeline[tlPos++]);
     lastT = t;
     if (i !== cueIdx) { cueIdx = i; ui.who.textContent = { n: '또박이', jun: '준이', sol: '솔이' }[c.who]; ui.who.dataset.who = c.who; ui.text.textContent = c.text; }
     const speaking = !audio.paused && t >= c.v0 && t <= c.v1;
     amp += ((speaking ? (+ENV[Math.floor(t * 30)] || 0) / 9 : 0) - amp) * Math.min(1, dt * 22);
     const who = { n: 'mascot', jun: 'jun', sol: 'sol' }[c.who];
-    for (const id in chars) applyRig(chars[id], dt, id === who ? amp : 0);
-    bgKids.forEach(r => applyRig(r, dt, 0));
+    for (const id in chars) applyRig(chars[id], dt, id === who ? amp : 0, t);
+    bgKids.forEach(r => applyRig(r, dt, 0, t));
     for (const id in objs) updObj(objs[id], t);
     const k = Math.min(1, dt * 3.2);
     cam.pos.lerp(cam.tpos, k); cam.look.lerp(cam.tlook, k);
@@ -2075,13 +2386,15 @@ const V = (() => {
       ui.text.textContent = '이 기기에서는 3D 영상을 볼 수 없어요. 다른 브라우저(크롬·엣지)로 열어 주세요.';
       return;
     }
-    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
+    renderer.setPixelRatio(low ? 1 : Math.min(devicePixelRatio || 1, 1.5));
     renderer.outputEncoding = T.sRGBEncoding;
     renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
     scene = new T.Scene(); scene.background = new T.Color('#e9e1cf'); scene.fog = new T.Fog('#e9e1cf', 10, 20);
     camera = new T.PerspectiveCamera(35, 16 / 9, .1, 60);
-    buildRoom(); buildCast();
+    buildRoom();
+    scene.traverse(o => { o.updateMatrix(); o.matrixAutoUpdate = false; });   // 교실은 움직이지 않으니 행렬을 한 번만 계산
+    buildCast();
     const st = { text: '' }, tex = canvasTex(2496, 180, ctx => {
       ctx.font = `900 104px ${TFONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#f4f1e8';
       ctx.fillText(st.text, 1248, 94);
@@ -2120,7 +2433,7 @@ const V = (() => {
     return bad;
   }
 
-  return { init, open, close, check, debug: () => ({ chars, cam, objs, sceneIdx, renderer }) };
+  return { init, open, close, check, debug: () => ({ chars, cam, objs, sceneIdx, renderer, bgKids, SHOTS, camera }) };
 })();
 
 </script>
@@ -2158,21 +2471,21 @@ const G = (() => {
 
   // 부정행위(cheat:1)와 올바른 행동(cheat:0). % 는 옆자리 방향(l/r)으로 바뀐다
   const ACTS = [
-    { cheat: 1, cls: 'peek-% look-% face-sly', bub: '흘끔', msg: '다른 학생의 답안지를 보는 행위' },
-    { cheat: 1, cls: 'look-% face-sly', bub: '똑똑', msg: '손동작·소리로 신호를 주고받는 행위' },
-    { cheat: 1, cls: 'arm-slip look-d face-sly lean-d', bub: 'cheatnote', msg: '컨닝 페이퍼를 보는 행위' },
-    { cheat: 1, cls: 'arm-palm look-l face-sly', bub: '손바닥', msg: '손바닥에 적어 놓고 보는 행위' },
-    { cheat: 1, cls: 'has-phone look-d lean-d face-sly', bub: 'phone', msg: '휴대전화(무선기기)를 이용하는 행위' },
-    { cheat: 1, cls: 'has-watch look-l look-d face-sly', bub: 'smartwatch', msg: '스마트 워치(무선기기)를 이용하는 행위' },
-    { cheat: 1, cls: 'has-ear face-sly look-u', bub: 'headset', msg: '무선 이어폰(무선기기)을 이용하는 행위' },
-    { cheat: 1, cls: 'look-% face-angry', bub: '보여줘!', msg: '답을 보여 달라고 강요·위협하는 행위' },
-    { cheat: 1, cls: 'peek-% look-% face-smile', bub: '바꿔', msg: '답안지를 바꾸어 대신 작성하려는 행위' },
-    { cheat: 0, cls: 'arm-up look-c face-smile', bub: '질문!', msg: '궁금한 점이 있어 손을 든 거예요. 올바른 행동!' },
-    { cheat: 0, cls: 'flip look-d', bub: 'paper', msg: '문제지 면수와 인쇄 상태를 확인하는 중이에요.' },
-    { cheat: 0, cls: 'look-u face-smile', bub: '몇 시?', msg: '교실 시계로 남은 시간을 확인했어요.' },
-    { cheat: 0, cls: 'look-u face-o', bub: '음…', msg: '문제를 열심히 생각하는 중이에요.' },
-    { cheat: 0, cls: 'yawn', bub: '하암', msg: '하품은 부정행위가 아니에요.' },
-    { cheat: 0, cls: 'look-d face-smile', bub: 'tape', msg: '수정테이프로 답을 고치는 중이에요.' },
+    { cheat: 1, cls: 'peek-% look-% face-sly a-peek side-%', bub: '흘끔', msg: '다른 학생의 답안지를 보는 행위' },
+    { cheat: 1, cls: 'look-% face-sly a-tap side-%', bub: '똑똑', msg: '손동작·소리로 신호를 주고받는 행위' },
+    { cheat: 1, cls: 'arm-slip look-d face-sly lean-d a-note side-%', bub: 'cheatnote', msg: '컨닝 페이퍼를 보는 행위' },
+    { cheat: 1, cls: 'arm-palm look-l face-sly a-palm', bub: '손바닥', msg: '손바닥에 적어 놓고 보는 행위' },
+    { cheat: 1, cls: 'has-phone look-d lean-d face-sly a-phone', bub: 'phone', msg: '휴대전화(무선기기)를 이용하는 행위' },
+    { cheat: 1, cls: 'has-watch look-l look-d face-sly a-watch', bub: 'smartwatch', msg: '스마트 워치(무선기기)를 이용하는 행위' },
+    { cheat: 1, cls: 'has-ear face-sly look-u a-ear', bub: 'headset', msg: '무선 이어폰(무선기기)을 이용하는 행위' },
+    { cheat: 1, cls: 'look-% face-angry a-demand side-%', bub: '보여줘!', msg: '답을 보여 달라고 강요·위협하는 행위' },
+    { cheat: 1, cls: 'peek-% look-% face-smile a-swap side-%', bub: '바꿔', msg: '답안지를 바꾸어 대신 작성하려는 행위' },
+    { cheat: 0, cls: 'arm-up look-c face-smile a-ask', bub: '질문!', msg: '궁금한 점이 있어 손을 든 거예요. 올바른 행동!' },
+    { cheat: 0, cls: 'flip look-d a-flip', bub: 'paper', msg: '문제지 면수와 인쇄 상태를 확인하는 중이에요.' },
+    { cheat: 0, cls: 'look-u face-smile a-clock', bub: '몇 시?', msg: '교실 시계로 남은 시간을 확인했어요.' },
+    { cheat: 0, cls: 'look-u face-o a-chin', bub: '음…', msg: '문제를 열심히 생각하는 중이에요.' },
+    { cheat: 0, cls: 'yawn a-yawn', bub: '하암', msg: '하품은 부정행위가 아니에요.' },
+    { cheat: 0, cls: 'look-d face-smile a-tape', bub: 'tape', msg: '수정테이프로 답을 고치는 중이에요.' },
   ];
   // 14명: 뒷줄 5 · 가운뎃줄 4 · 앞줄 5. 줄마다 엇갈려 앉아 뒷사람 얼굴이 가려지지 않는다
   const ROWS = [[430, .45, [190, 495, 800, 1105, 1410]], [615, .55, [342, 647, 952, 1257]], [845, .66, [190, 495, 800, 1105, 1410]]];
@@ -2185,8 +2498,8 @@ const G = (() => {
   const WAVES = [{ name: '1교시', cheats: 4, decoys: 2, gap: 2300, life: 4300, max: 1 },
     { name: '2교시', cheats: 5, decoys: 3, gap: 1500, life: 3600, max: 2, pair: 1 },
     { name: '3교시', cheats: 6, decoys: 4, gap: 1050, life: 3000, max: 3, pair: 1, note: 1 }];
-  const NOTE = { cheat: 1, cls: 'arm-slip look-d face-sly', bub: 'cheatnote', msg: '쪽지(컨닝 페이퍼)를 주고받는 행위' };
-  const PAIR = { cheat: 1, cls: 'look-% face-sly', bub: '똑똑', msg: '손동작·소리로 신호를 주고받는 행위' };
+  const NOTE = { cheat: 1, cls: 'arm-slip look-d face-sly a-note a-pass side-%', bub: 'cheatnote', msg: '쪽지(컨닝 페이퍼)를 주고받는 행위' };
+  const PAIR = { cheat: 1, cls: 'look-% face-sly a-tap side-%', bub: '똑똑', msg: '손동작·소리로 신호를 주고받는 행위' };
   const HUNT_N = 3, TOTAL = HUNT_N * 2 + WAVES.reduce((a, w) => a + w.cheats + (w.pair || 0) * 2 + (w.note || 0), 0);
   const BEST_KEY = 'examwarning-best';
 
@@ -2349,7 +2662,7 @@ const G = (() => {
     svg.innerHTML = room + `<g id="wallbell" class="h" transform="translate(790 118)"><g class="in">${K.prop('bell', 1.1)}</g></g>` +
       SEATS.map(({ x, y, s, r }, i) => K.kid({ id: 'k' + i, x, y, s, hair: HAIR[i % 7], shirt: SHIRT[i % 6], skin: SKINS[i % 5], tie: i % 2 === 0, style: STYLE[(i * 4) % 9],
         blink: (i * .7) % 4, bub: .9 / s, tint: [.12, .06, 0][r], persp: (800 - x) * .06 })).join('') + '<g id="fx"></g>';
-    SEATS.forEach((_, i) => idle(i));
+    SEATS.forEach((_, i) => { kidEl(i).style.setProperty('--ph', -((i * .37) % 3).toFixed(2) + 's'); idle(i); });
     svg.addEventListener('click', e => { const k = e.target.closest('.kid'); if (k) tap(+k.id.slice(1)); });
     hud();
     over(`<h2>오늘은 내가 정직 지킴이!</h2><p>우리 반 14명이 시험을 봐요. <b>부정행위를 하는 학생</b>을 찾아 빠르게 눌러요.</p>
@@ -2357,9 +2670,11 @@ const G = (() => {
       <p>연속으로 잡으면 점수가 <b>최대 3배</b>! 올바른 행동을 하는 학생을 누르면 ●가 줄어요.</p>
       ${best ? `<p class="best">최고 기록 ${best}점</p>` : ''}<button class="btn" onclick="G.begin()">감독 시작</button>`);
   }
+  // 대기 4종: 쓰며 끄덕 / 고개 기울여 쓰기 / 펜 멈추고 읽기 / 몸 살짝 흔들며 쓰기
+  const IDLE = ['writing idle-a', 'writing idle-b', 'idle-c', 'writing idle-d'];
   function idle(i) {
     const el = kidEl(i);
-    el.setAttribute('class', 'kid tap writing look-d');
+    el.setAttribute('class', 'kid tap ' + IDLE[(i * 3) % 4] + ' look-d');
     K.bubble(el, '');
   }
   function banner(text, ms = 1300) {
@@ -2424,13 +2739,12 @@ const G = (() => {
     setEvent(i, ev.act, c === 0 ? 'r' : c === n - 1 ? 'l' : Math.random() < .5 ? 'l' : 'r', life);
     return true;
   }
-  const hop = (chain, k) => setEvent(chain[k], NOTE, 'r', Math.max(1500, st.w.life * .5) * st.slow, { chain, k });   // 쪽지가 옆으로 넘어간다
+  const hop = (chain, k) => setEvent(chain[k], NOTE, k < chain.length - 1 && chain[k + 1] < chain[k] ? 'l' : 'r', Math.max(1500, st.w.life * .5) * st.slow, { chain, k });   // 쪽지가 옆으로 넘어간다
   function setEvent(i, act, dir, life, extra) {
     const el = kidEl(i);
     el.setAttribute('class', 'kid tap timed');
     el.style.setProperty('--life', life + 'ms');
     K.set(el, act.cls.replaceAll('%', dir));
-    K.bubble(el, act.bub);
     st.busy[i] = { act, t0: Date.now(), life, timer: later(() => expire(i), life), ...extra };
   }
   function release(i, delay = 0) {
@@ -2462,6 +2776,7 @@ const G = (() => {
     st.score += pts;
     const el = kidEl(i);
     el.classList.remove('timed');
+    [...el.classList].forEach(c => /^(a|side|sheet|idle|arm|lean|peek|has)-/.test(c) && el.classList.remove(c));
     K.set(el, '!writing face-shock look-c caught'); K.bubble(el, '');
     popup(i, '+' + pts, 'good');
     if (st.combo >= 3 && st.combo % 3 === 0) popup(i, `${st.combo}연속!`, 'combo');
@@ -2496,12 +2811,12 @@ const G = (() => {
   // ── 정해진 시간 안에 '해당 학생'을 모두 찾는 단계 (시작종 전 / 종료령 뒤)
   const HUNT_PRE = { phase: 'pre', name: '시작종 전', msg: '시작종이 울리기 전에 문제를 풀거나 답을 표시하는 행위', wrong: '앗! 인적 사항을 표기하거나 조용히 기다리는 학생이에요.',
     intro: '문제지를 받았어요. 시작종 전에는 인적 사항만 표기! 미리 푸는 학생 3명을 찾아요.',
-    bad: k => ['writing look-d face-sly', ['문제 풀기', '답 표시', '문제 풀기'][k]],
-    ok: i => i % 3 === 0 ? ['writing look-d face-smile', '인적사항'] : ['arm-down look-c face-smile', ''],
+    bad: k => [k === 1 ? 'pre sheet-mark writing look-d face-sly' : 'pre sheet-solve writing look-d face-sly', ''],
+    ok: i => i % 3 === 0 ? ['pre sheet-name writing look-d face-smile', ''] : ['pre arm-down look-c face-smile', ''],
     next() { K.sfx('bell'); later(nextWave, 1500); toast('시작종이 울렸어요!'); } };
   const HUNT_END = { phase: 'bell', name: '종료령', msg: '종료령이 울린 뒤에도 계속 답안지를 작성하는 행위', wrong: '앗! 필기구를 내려놓고 손을 책상 아래로 내린 학생이에요.',
     intro: '종료령이 울렸어요! 아직도 답안지를 쓰고 있는 학생 3명을 찾아요.', ring: true,
-    bad: () => ['writing look-d face-sly', ''], ok: () => ['arm-down look-c face-smile', ''],
+    bad: () => ['writing look-d face-sly a-late', ''], ok: () => ['arm-down look-c face-smile', ''],
     next() { finishWatch(true); } };
   function hunt(h) {
     if (!st || st.hearts <= 0) return;

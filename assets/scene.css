@@ -46,7 +46,9 @@
 .kid[class*="arm-"] .k-rest { display: none; }
 .kid.arm-rest .k-rest, .kid.arm-down .k-down, .kid.arm-up .k-up, .kid.arm-palm .k-palm, .kid.arm-slip .k-slip { display: block; }
 .kid.arm-up .k-up { animation: wave .4s ease-in-out 2 alternate; transform-box: fill-box; transform-origin: 50% 100%; }
-.kid.writing .k-hand-r, .kid.writing .k-pen { animation: write .22s ease-in-out infinite alternate; }
+/* 숨은 팔 묶음 속 손에는 애니메이션을 걸지 않는다(display:none 이어도 애니메이션이 생겨 프레임 비용이 는다) */
+.kid.writing .k-rest .k-hand-r, .kid.writing .k-pen, .kid.writing.sheet-name .k-a-name .k-wh, .kid.writing.sheet-mark .k-a-mark .k-wh,
+.kid.writing.sheet-solve .k-a-solve .k-wh { animation: write .22s ease-in-out var(--ph, 0s) infinite alternate; }
 .kid.wiggle .k-in { animation: wiggle .3s ease-in-out infinite alternate; }
 .kid.yawn .m { display: none; }
 .kid.yawn .m-o { display: block; transform: scale(1.5); transform-box: fill-box; transform-origin: 50% 50%; }
@@ -173,3 +175,130 @@
 @keyframes floatUp { from { transform: translateY(20px); opacity: 0; } 20% { transform: none; opacity: 1; } to { transform: translateY(-90px); opacity: 0; } }
 .scene-svg.shake { animation: shake .4s; }
 .overlay .best { color: var(--pencil); font-weight: 800; }
+
+/* ── 2단계 행동 사전: 글자 없이 자세·소품·리듬으로 구분. 멈춘 자세(정적 transform)가 먼저, 움직임은 그 위 ── */
+.kid { --sx: 1; }
+.kid.side-l { --sx: -1; }
+.k-body, .k-arms { transform-box: view-box; transform-origin: 0 -30px; }
+/* 머리 회전축 = 머리 중심. fill-box 는 매 프레임 bbox 계산이 들어 3교시 fps 가 반으로 떨어진다 */
+.kid .k-head { transform-box: view-box; transform-origin: 0 -270px; }
+.kid .k-in { transform-box: view-box; transform-origin: 0 190px; }
+.kid .k-eyes { transform-box: view-box; transform-origin: 0 -262px; }
+.kid :is(.k-pupils, .k-hand-r, .k-pen) { transform-box: view-box; }
+.k-a-tap, .k-a-demand, .k-a-swap, .k-slip { transform-box: view-box; transform-origin: 0 0; transform: scaleX(var(--sx)); }
+.k-sliph, .k-swaph { transform-box: view-box; transform-origin: 92px -140px; }
+.k-sheet, .k-book, .k-book-o, .k-pen-down, .k-uglow, .k-sheet .k-name, .k-sheet [class^="k-omr-f"] { display: none; }
+.kid:is(.a-phone, .a-watch, .a-ear, .a-chin, .a-yawn, .a-tap, .a-demand, .a-swap, .a-tape, .a-flip, .sheet-name, .sheet-mark, .sheet-solve) .k-rest { display: none; }
+.kid.a-phone .k-a-phone, .kid.a-watch .k-a-watch, .kid.a-ear .k-a-ear, .kid.a-chin .k-a-chin, .kid.a-yawn .k-a-yawn, .kid.a-tap .k-a-tap,
+.kid.a-demand .k-a-demand, .kid.a-swap .k-a-swap, .kid.a-tape .k-a-tape, .kid.a-flip .k-a-flip,
+.kid.sheet-name .k-a-name, .kid.sheet-mark .k-a-mark, .kid.sheet-solve .k-a-solve { display: block; }
+
+/* 대기 4종 (모두 --ph 시차) */
+.kid .k-in { animation-delay: var(--ph, 0s); }
+.kid.idle-a .k-head { animation: idleNod 2.8s ease-in-out var(--ph, 0s) infinite; }
+.kid.idle-b .k-head { transform: rotate(-5deg); }
+.kid.idle-b.writing :is(.k-hand-r, .k-pen) { animation-duration: .3s; }
+/* ponytail: 대기 숨·흔들기는 몸통만(팔은 책상 위에 둔다). 14명 동시 반복이라 큰 묶음 애니메이션 수를 줄여 3교시 fps 확보 */
+.kid.idle-b .k-body { animation: idleBreath 3.1s ease-in-out var(--ph, 0s) infinite; }
+.kid.idle-c .k-pupils { transform: translate(-6px, 7px); animation: idleRead 2.6s steps(4, jump-none) var(--ph, 0s) infinite; }
+.kid.idle-d.writing :is(.k-hand-r, .k-pen) { animation-duration: .26s; }
+.kid.idle-d .k-body { animation: idleSway 4s ease-in-out var(--ph, 0s) infinite alternate; }
+@keyframes idleNod { 0%, 100% { transform: none; } 50% { transform: translateY(4px) rotate(2deg); } }
+@keyframes idleBreath { 0%, 100% { transform: none; } 50% { transform: scaleY(1.015); } }
+@keyframes idleRead { from { transform: translate(-6px, 7px); } to { transform: translate(6px, 7px); } }
+@keyframes idleSway { from { transform: rotate(-1.5deg); } to { transform: rotate(1.5deg); } }
+
+/* 부정행위 */
+.kid.a-peek :is(.k-body, .k-arms) { transform: translateX(calc(65px * var(--sx))) rotate(calc(12deg * var(--sx))); animation: peekB 2.6s ease-in-out infinite; }
+.kid.a-peek .k-head { transform: translate(calc(44px * var(--sx)), -14px) rotate(calc(14deg * var(--sx))); animation: peekH 2.6s ease-in-out infinite; }
+.kid.a-peek .k-pupils { transform: translate(calc(15px * var(--sx)), 2px); }
+@keyframes peekB { 0%, 80%, 100% { transform: none; } 20%, 70% { transform: translateX(calc(65px * var(--sx))) rotate(calc(12deg * var(--sx))); } }
+@keyframes peekH { 0%, 80%, 100% { transform: none; } 20%, 70% { transform: translate(calc(44px * var(--sx)), -14px) rotate(calc(14deg * var(--sx))); } }
+
+.kid.a-tap .k-head { transform: translateX(calc(10px * var(--sx))) rotate(calc(6deg * var(--sx))); }
+.kid.a-tap .k-taph { animation: tapH 1.7s infinite; }
+.kid.a-tap .k-knock { animation: tapK 1.7s infinite; }
+@keyframes tapH { 0%, 21%, 42%, 63%, 100% { transform: none; } 10%, 31%, 52% { transform: translateY(-18px); } }
+@keyframes tapK { 0%, 5%, 21%, 26%, 42%, 47% { opacity: 1; } 9%, 18%, 30%, 39%, 51%, 100% { opacity: 0; } }
+
+.kid.a-note .k-head { transform: translateY(18px) rotate(calc(10deg * var(--sx))); animation: noteH 3s ease-in-out infinite; }
+.kid.a-pass .k-sliph { transform: rotate(-11deg) scale(1.12); }
+@keyframes noteH { 0%, 78%, 96%, 100% { transform: translateY(18px) rotate(calc(10deg * var(--sx))); } 81%, 93% { transform: none; } }
+
+.kid.a-palm .k-head { transform: translateX(-8px) rotate(-8deg); animation: palmH 2.4s ease-in-out infinite; }
+.kid.a-palm .k-palmh { animation: palmA 2.4s ease-in-out infinite; }
+@keyframes palmH { 0%, 65%, 100% { transform: translateX(-8px) rotate(-8deg); } 72%, 92% { transform: none; } }
+@keyframes palmA { 0%, 65%, 100% { transform: none; } 72%, 92% { transform: translateY(40px); } }
+
+.kid.a-phone .k-uglow { display: block; opacity: .45; animation: uglow 1s ease-in-out infinite alternate; }
+.kid.a-phone .k-phoneh { animation: thumb .17s ease-in-out infinite alternate; }
+@keyframes uglow { from { opacity: .3; } to { opacity: .55; } }
+@keyframes thumb { to { transform: translateY(-4px); } }
+
+.kid.a-watch .k-head { transform: translate(-12px, 12px) rotate(-6deg); }
+.kid.a-watch .k-pupils { transform: translate(-6px, 7px); }
+.kid.a-watch .k-watchtap { animation: watchTap 2s ease-in-out infinite; }
+.kid.a-watch .k-wscr { animation: glow .5s infinite alternate; }
+@keyframes watchTap { 0%, 20%, 40%, 100% { transform: none; } 10%, 30% { transform: translate(-6px, -10px); } }
+
+.kid.a-ear .k-head { transform: translateX(4px) rotate(7deg); animation: earNod .5s ease-in-out infinite alternate; }
+@keyframes earNod { from { transform: translateX(4px) rotate(4deg); } to { transform: translateX(4px) rotate(9deg); } }
+
+.kid.a-demand :is(.k-body, .k-arms) { transform: translateX(calc(14px * var(--sx))) rotate(calc(5deg * var(--sx))); }
+.kid.a-demand .k-fist { transform-box: view-box; transform-origin: 240px -118px; animation: fist .14s ease-in-out infinite alternate; }
+@keyframes fist { from { transform: rotate(-12deg); } to { transform: rotate(12deg); } }
+
+.kid.a-swap .k-paper { transform: translateX(calc(250px * var(--sx))); animation: swapP 2.2s ease-in-out infinite; }
+.kid.a-swap .k-swaph { animation: swapA 2.2s ease-in-out infinite; }
+@keyframes swapP { 0%, 90%, 100% { transform: none; } 30%, 60% { transform: translateX(calc(250px * var(--sx))); } }
+@keyframes swapA { 0%, 90%, 100% { transform: rotate(77deg) scale(.71); } 30%, 60% { transform: none; } }
+
+/* 올바른 행동 */
+.kid.a-ask .k-up { animation: wave .4s ease-in-out infinite alternate; }
+.kid.a-flip .k-head { transform: translateY(10px); }
+.kid.a-flip .k-flipg { transform-box: view-box; transform-origin: -4px -34px; animation: flipPage .5s ease-in-out infinite alternate; }
+@keyframes flipPage { to { transform: scaleX(.25); } }
+.kid.a-clock .k-head { transform: translate(8px, -22px) rotate(12deg); animation: clockH 3s ease-in-out infinite; }
+.kid.a-clock .k-pupils { transform: translate(8px, -13px); }
+@keyframes clockH { 0%, 70%, 100% { transform: none; } 10%, 60% { transform: translate(8px, -22px) rotate(12deg); } }
+.kid.a-chin .k-head { transform: rotate(-6deg); }
+.kid.a-chin .k-pupils { transform: translate(-7px, -7px); }
+.kid.a-chin .k-chinh { animation: chinA 1.2s ease-in-out infinite; }
+@keyframes chinA { 50% { transform: translateY(-6px); } }
+.kid.a-yawn .k-head { transform: translateY(-10px) rotate(-4deg); }
+.kid.a-yawn :is(.k-body, .k-arms) { transform: scaleY(1.03); animation: yawnB 2.4s ease-in-out infinite; }
+@keyframes yawnB { 0%, 100% { transform: none; } 50% { transform: scaleY(1.03); } }
+.kid.a-tape .k-tapeh { transform: translateX(30px); animation: tapeH 1.2s ease-in-out infinite; }
+.kid.a-tape .k-tapeline { transform-box: view-box; transform-origin: -44px -20px; animation: tapeL 1.2s ease-in-out infinite; }
+@keyframes tapeH { 0% { transform: translateX(-40px); } 58%, 100% { transform: translateX(30px); } }
+@keyframes tapeL { 0% { transform: scaleX(0); } 58%, 100% { transform: none; } }
+
+/* 시작종 전(답안지 1.6배 + 시험지) / 종료령 */
+.kid.pre .k-paper { transform-box: fill-box; transform-origin: 50% 50%; transform: translate(-30px, 0) scale(1.6); }
+.kid.pre .k-plines { display: none; }
+.kid.pre .k-sheet, .kid.pre .k-book, .kid.sheet-name .k-name, .kid.sheet-mark [class^="k-omr-f"] { display: block; }
+.kid.sheet-solve .k-book-o { display: block; }
+.kid.sheet-solve .k-book-c { display: none; }
+.kid.sheet-name .k-name { animation: nameW 2s linear infinite; }
+@keyframes nameW { 0% { stroke-dashoffset: 60; } 80%, 100% { stroke-dashoffset: 0; } }
+.kid.sheet-mark .k-omr-f4, .kid.sheet-mark .k-omr-f5 { opacity: 0; }
+.kid.sheet-mark .k-omr-f1 { animation: omr1 2.4s infinite; }
+.kid.sheet-mark .k-omr-f2 { animation: omr2 2.4s infinite; }
+.kid.sheet-mark .k-omr-f3 { animation: omr3 2.4s infinite; }
+.kid.sheet-mark .k-omr-f4 { animation: omr4 2.4s infinite; }
+.kid.sheet-mark .k-omr-f5 { animation: omr5 2.4s infinite; }
+@keyframes omr1 { 0%, 7% { opacity: 0; } 8%, 100% { opacity: 1; } }
+@keyframes omr2 { 0%, 24% { opacity: 0; } 25%, 100% { opacity: 1; } }
+@keyframes omr3 { 0%, 41% { opacity: 0; } 42%, 100% { opacity: 1; } }
+@keyframes omr4 { 0%, 57% { opacity: 0; } 58%, 100% { opacity: 1; } }
+@keyframes omr5 { 0%, 74% { opacity: 0; } 75%, 100% { opacity: 1; } }
+.kid.sheet-mark .k-omrh { animation: omrHand 2.4s infinite; }
+@keyframes omrHand { 0%, 16% { transform: translateX(-64px); } 17%, 33% { transform: translateX(-32px); } 34%, 50% { transform: none; }
+  51%, 66% { transform: translateX(32px); } 67%, 100% { transform: translateX(64px); } }
+.kid.sheet-mark .k-head { transform: translateY(8px); animation: markH 2.4s ease-in-out infinite; }
+@keyframes markH { 0%, 40%, 100% { transform: translateY(8px); } 50%, 90% { transform: translate(10px, 6px) rotate(6deg); } }
+.kid.sheet-solve .k-head { transform: translate(10px, 10px) rotate(6deg); }
+.kid.arm-down .k-pen-down { display: block; }
+.kid.a-late .k-head { transform: translateY(12px); animation: lateH 1.8s ease-in-out infinite; }
+.kid.a-late.writing :is(.k-hand-r, .k-pen) { animation-duration: .14s; }
+@keyframes lateH { 0%, 80%, 100% { transform: translateY(12px); } 86%, 94% { transform: none; } }

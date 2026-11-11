@@ -42,17 +42,39 @@ const V = (() => {
   let renderer, scene, camera, canvas, audio, ui, raf = 0, stage, objs = {}, titleObj;
   let sceneIdx = -1, cueIdx = -1, lastT = 0, timeline = [], tlPos = 0, clock = 0, prevNow = 0, amp = 0, failed = false;
   const chars = {}, bgKids = [];
+  const low = (navigator.hardwareConcurrency || 8) <= 4 || Math.min(screen.width, screen.height) < 820;   // 저사양: 그림자 해상도·배경 학생 외곽선·픽셀 비율을 줄인다
   const cam = { pos: new T.Vector3(), look: new T.Vector3(), tpos: new T.Vector3(), tlook: new T.Vector3(), shot: '' };
 
   /* ───────── 기본 도구 ───────── */
   const mats = {};
   const mat = (c, o) => { const k = c + (o ? JSON.stringify(o) : ''); return mats[k] || (mats[k] = new T.MeshStandardMaterial({ color: c, roughness: .82, metalness: 0, ...o })); };
+  // 사람·마스코트용 만화 음영(3단계 명암). 교실은 위의 mat 그대로
+  let grad, olMat, toon = false, olOn = false;   // toon·olOn 은 makeKid·makeMascot 안에서만 켠다
+  function toonMat(c, o = {}) {
+    const k = 'toon' + c + JSON.stringify(o);
+    if (mats[k]) return mats[k];
+    if (!grad) {
+      grad = new T.DataTexture(new Uint8Array([110, 110, 110, 255, 190, 190, 190, 255, 255, 255, 255, 255]), 3, 1);
+      grad.minFilter = grad.magFilter = T.NearestFilter; grad.generateMipmaps = false; grad.needsUpdate = true;
+    }
+    const { roughness, metalness, flatShading, ...r } = o;   // 툰 재질에 없는 키는 빼야 three 경고가 안 난다
+    return mats[k] = new T.MeshToonMaterial({ color: c, gradientMap: grad, ...r });
+  }
+  function outline(m, geo) {   // 뒤집은 껍질 외곽선: 같은 모양을 법선 방향으로 살짝 부풀려 뒷면만 그린다
+    if (!olMat) {
+      olMat = new T.MeshBasicMaterial({ color: LINE, side: T.BackSide });
+      olMat.onBeforeCompile = s => { s.vertexShader = s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  transformed += normal * 0.011;'); };
+    }
+    const h = new T.Mesh(geo, olMat);
+    h.castShadow = false; m.add(h);
+  }
   function add(parent, geo, color, pos, o = {}) {
-    const m = new T.Mesh(geo, typeof color === 'string' ? mat(color, o.mat) : color);
+    const m = new T.Mesh(geo, typeof color === 'string' ? (toon ? toonMat : mat)(color, o.mat) : color);
     if (pos) m.position.set(...pos);
     if (o.rot) m.rotation.set(...o.rot);
     if (o.scale) m.scale.set(...o.scale);
     m.castShadow = o.cast !== false; m.receiveShadow = !!o.receive;
+    if (o.ol && olOn) outline(m, o.ol.isBufferGeometry ? o.ol : geo);
     parent.add(m);
     return m;
   }
@@ -243,33 +265,39 @@ const V = (() => {
   }
 
   /* ───────── 캐릭터 ───────── */
-  const P0 = { pSx: -.45, pSz: -.1, pEx: -1.35, nSx: -.45, nSz: -.1, nEx: -1.35, bYaw: 0, bLean: 0, bRoll: 0,
-    hYaw: 0, hPitch: 0, eX: 0, eY: 0, eOpen: 1, curve: 1, mO: 0, brow: 0, browL: 0 };
-  const REST = { pSx: -.45, pSz: -.1, pEx: -1.35, nSx: -.45, nSz: -.1, nEx: -1.35 };
-  const LOOK0 = { hYaw: 0, hPitch: 0, eX: 0, eY: 0, bRoll: 0, bYaw: 0, bLean: 0 };
+  const P0 = { pSx: -.45, pSz: -.1, pEx: -1.35, pWx: 0, nSx: -.45, nSz: -.1, nEx: -1.35, nWx: 0, bYaw: 0, bLean: 0, bRoll: 0, plX: 0, plYaw: 0, slump: 0, tense: 0,
+    kneeL: 0, kneeR: 0, hYaw: 0, hPitch: 0, hRoll: 0, eX: 0, eY: 0, eOpen: 1, curve: 1, mO: 0, brow: 0, browL: 0 };
+  const REST = { pSx: -.45, pSz: -.1, pEx: -1.35, pWx: 0, nSx: -.45, nSz: -.1, nEx: -1.35, nWx: 0 };
+  const LOOK0 = { hYaw: 0, hPitch: 0, hRoll: 0, eX: 0, eY: 0, bRoll: 0, bYaw: 0, bLean: 0, plX: 0 };
+  // 채널별 스프링 [세기, 감쇠]: 눈은 빠르게, 몸은 묵직하게
+  const SPR = {};
+  [['eX eY', 400, 40], ['eOpen curve mO brow browL', 160, 22], ['hPitch hYaw hRoll', 90, 17], ['pSx pSz pEx pWx nSx nSz nEx nWx', 70, 15],
+    ['bLean bYaw bRoll plX plYaw slump tense', 35, 11], ['kneeL kneeR', 50, 13]].forEach(([ks, k, d]) => ks.split(' ').forEach(c => SPR[c] = [k, d]));
   // 상태 이름 → 목표 자세. n = 옆자리 방향(+1/-1)
   const TOK = {
-    'arm-rest': () => REST,
+    'arm-rest': () => ({ ...REST, pSz: -.05, nWx: .2 }),
     'arm-up': () => ({ ...REST, pSx: -2.9, pSz: .5, pEx: -.15 }),
-    'arm-down': () => ({ pSx: .12, pSz: .1, pEx: -.2, nSx: .12, nSz: .1, nEx: -.2 }),
-    'arm-palm': () => ({ ...REST, nSx: -1.25, nSz: -.5, nEx: -1.95 }),
+    'arm-down': () => ({ pSx: .12, pSz: .1, pEx: -.2, pWx: 0, nSx: .12, nSz: .1, nEx: -.2, nWx: 0 }),
+    'arm-palm': () => ({ ...REST, nSx: -1.25, nSz: -.5, nEx: -1.95, nWx: -.6 }),
     'arm-slip': () => ({ ...REST, nSx: .1, nSz: 0, nEx: -1.05 }),
-    'arm-hold': () => ({ ...REST, pSx: -1.3, pSz: .22, pEx: -1.25 }),
-    'arm-cheer': () => ({ pSx: -2.8, pSz: .5, pEx: -.25, nSx: -2.8, nSz: .5, nEx: -.25 }),
-    'face-smile': () => ({ curve: 1, mO: 0, brow: 0, browL: 0, eOpen: 1 }),
-    'face-sad': () => ({ curve: -.8, mO: 0, brow: -.3, browL: 0, eOpen: 1 }),
-    'face-sweat': () => ({ curve: -.6, mO: 0, brow: -.35, browL: .01, eOpen: 1 }),
-    'face-o': () => ({ curve: .1, mO: .75, brow: 0, browL: .015, eOpen: 1.1 }),
-    'face-shock': () => ({ curve: .1, mO: 1, brow: -.1, browL: .03, eOpen: 1.25 }),
-    'face-sly': () => ({ curve: .7, mO: 0, brow: .3, browL: -.005, eOpen: .62 }),
-    'face-angry': () => ({ curve: -.6, mO: 0, brow: .45, browL: -.01, eOpen: .85 }),
+    'arm-hold': () => ({ ...REST, pSx: -1.8, pSz: .3, pEx: -.95 }),   // 휴대전화가 phoneFly 출발점(-.72,1.33,-.3)에 오도록
+    'arm-cheer': () => ({ pSx: -2.8, pSz: .5, pEx: -.25, pWx: 0, nSx: -2.8, nSz: .5, nEx: -.25, nWx: 0 }),
+    'face-smile': () => ({ curve: 1, mO: 0, brow: 0, browL: 0, eOpen: 1, slump: 0, tense: 0 }),
+    'face-sad': () => ({ curve: -.8, mO: 0, brow: -.3, browL: 0, eOpen: 1, slump: .8, tense: 0 }),
+    'face-sweat': () => ({ curve: -.6, mO: 0, brow: -.35, browL: .01, eOpen: 1, slump: .4, tense: 0 }),
+    'face-o': () => ({ curve: .1, mO: .75, brow: 0, browL: .015, eOpen: 1.1, slump: 0, tense: 0 }),
+    'face-shock': () => ({ curve: .1, mO: 1, brow: -.1, browL: .03, eOpen: 1.25, slump: 0, tense: 0 }),
+    'face-sly': () => ({ curve: .7, mO: 0, brow: .3, browL: -.005, eOpen: .62, slump: 0, tense: 0 }),
+    'face-angry': () => ({ curve: -.6, mO: 0, brow: .45, browL: -.01, eOpen: .85, slump: 0, tense: .7 }),
     'look-c': () => LOOK0,
-    'look-u': () => ({ ...LOOK0, hPitch: -.2, eY: .6 }),
+    'look-u': () => ({ ...LOOK0, hPitch: -.2, eY: .6, bLean: -.04 }),
     'look-d': () => ({ ...LOOK0, hPitch: .42, eY: -.5, bLean: .12 }),
-    'look-n': n => ({ ...LOOK0, hYaw: n * .62, eX: n * .8 }),
-    'look-palm': () => ({ ...LOOK0, hYaw: -.4, hPitch: .12, eX: -.8 }),
-    'peek': n => ({ hYaw: n * .78, hPitch: .22, eX: n, eY: -.4, bRoll: -n * .24, bYaw: n * .25, bLean: .05 }),
+    'look-n': n => ({ ...LOOK0, hYaw: n * .62, eX: n * .8, bYaw: n * .12 }),
+    'look-palm': () => ({ ...LOOK0, hYaw: -.4, hPitch: .12, hRoll: -.06, eX: -.8 }),
+    'peek': n => ({ ...LOOK0, hYaw: n * .78, hPitch: .22, eX: n, eY: -.4, bRoll: -n * .24, bYaw: n * .25, bLean: .05, plX: n * .05 }),
   };
+  // 팔·표정 토큰이 시선 토큰과 같은 채널을 덮어쓰지 않도록 더해지는 몫
+  const XA = { 'arm-up': { bRoll: -.06, hPitch: -.08 }, 'arm-down': { bLean: -.05 }, 'arm-slip': { bLean: .18 }, 'face-o': { hPitch: -.05 }, 'face-sly': { hRoll: .08 } };
   const M_REST = { pSx: 0, pSz: .45, pEx: -.5, nSx: 0, nSz: .45, nEx: -.5 };
   const TOK_M = { ...TOK,
     'arm-rest': () => M_REST,
@@ -277,6 +305,30 @@ const V = (() => {
     'arm-wave': () => ({ ...M_REST, pSx: -.2, pSz: 2.5, pEx: -.7 }),
     'arm-cheer': () => ({ pSx: 0, pSz: 2.5, pEx: -.3, nSx: 0, nSz: 2.5, nEx: -.3 }),
   };
+  // 1회 동작: [시각(s), 더할 값] 키프레임, 사이는 부드럽게
+  const CLIPS = {
+    up: [[0], [.12, { pSx: .15 }], [.45]],
+    down: [[0], [.12, { nWx: -.3 }], [.35]],
+    shock: [[0], [.12, { bLean: -.15, hPitch: -.12, pSx: .1, nSx: .1 }], [.6]],
+    point: [[0], [.075, { pSz: .12 }], [.15], [.225, { pSz: .12 }], [.3]],
+    ges: [[0], [.16, { pSx: -.3, pEx: .3 }], [.4]],
+  };
+  const TAU = Math.PI * 2, tmpV = new T.Vector3();
+  const sstep = (a, b, x) => { const u = clamp((x - a) / (b - a)); return u * u * (3 - 2 * u); };
+  const win = (p, a, b, e) => sstep(a, a + e, p) * (1 - sstep(b - e, b, p));   // a~b 구간에서 1, 가장자리 e 초 동안 부드럽게
+  const hash = (a, b) => { const x = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453; return x - Math.floor(x); };
+  function clipAdd(o, name, u) {   // 끝났으면 false
+    const K = CLIPS[name];
+    for (let i = 1; i < K.length; i++) if (u < K[i][0]) {
+      const a = K[i - 1], b = K[i], e = sstep(a[0], b[0], u);
+      for (const k in a[1]) o[k] = (o[k] || 0) + a[1][k] * (1 - e);
+      for (const k in b[1]) o[k] = (o[k] || 0) + b[1][k] * e;
+      return true;
+    }
+    return false;
+  }
+  const freeze = (root, live) => root.traverse(x => { if (x.isMesh && !live.includes(x)) { x.updateMatrix(); x.matrixAutoUpdate = false; } });   // 관절(그룹)만 움직이니 나머지 메시 행렬은 한 번만
+  const rigBase = () => ({ vel: {}, os: {}, flags: new Set(), clips: [], fw: { writing: 0, wiggle: 0, flip: 0, cheer: 0, wave: 0 }, armAt: 0, faceAt: 0, lookAt: 0, look: 'look-c', root: new T.Group() });
 
   function face(head, y, z, s, rig, flat) {   // 눈·눈썹·볼·입
     rig.eyes = []; rig.pupils = []; rig.brows = [];
@@ -296,13 +348,14 @@ const V = (() => {
     rig.smile = add(rig.mouth, new T.TorusGeometry(.04 * s, .0075 * s, 8, 20, Math.PI), INK, null, { rot: [0, 0, Math.PI], cast: false });
     rig.open = add(rig.mouth, new T.CircleGeometry(.036 * s, 24), new T.MeshBasicMaterial({ color: '#7a2e2e' }), [0, -.012 * s, .002], { cast: false });
   }
-  function arm(body, sx, y, x, r, l1, l2, sleeve, skin, hand) {
+  function arm(body, sx, y, x, r, l1, l2, sleeve, skin, hand, ol) {   // 어깨 → 팔꿈치 → 손목
     const sh = grp(body, [sx * x, y, 0]);
-    add(sh, cap(r, l1 - r * 1.2), sleeve, [0, -l1 / 2, 0]);
+    add(sh, cap(r, l1 - r * 1.2), sleeve, [0, -l1 / 2, 0], { ol });
     const el = grp(sh, [0, -l1, 0]);
-    add(el, cap(r * .9, l2 - r * 1.2), skin, [0, -l2 / 2, 0]);
-    const h = add(el, sph(hand), skin === INK ? '#ffffff' : skin, [0, -l2 - hand * .3, 0]);
-    return { sh, el, hand: h };
+    add(el, cap(r * .9, l2 - r * 1.2), skin, [0, -l2 / 2, 0], { ol });
+    const wr = grp(el, [0, -l2, 0]);
+    const h = add(wr, sph(hand), skin === INK ? '#ffffff' : skin, [0, -hand * .3, 0], { ol });
+    return { sh, el, wr, hand: h };
   }
   function bubbleNode() {
     const st = { text: '' };
@@ -321,19 +374,23 @@ const V = (() => {
     n.userData = { st, tex };
     return n;
   }
-  function makeKid({ hair, shirt, style = 'short', nb = 0, seed = 0, skin = SKIN, tie = true }) {
-    const rig = { kind: 'kid', tok: TOK, nb, seed, cur: { ...P0 }, vel: {}, tgt: { ...P0 }, flags: new Set(), blinkAt: 1 + seed, root: new T.Group() };
+  function makeKid({ hair, shirt, style = 'short', nb = 0, seed = 0, skin = SKIN, tie = true, ol = true }) {
+    const rig = { kind: 'kid', tok: TOK, nb, seed, cur: { ...P0 }, tgt: { ...P0 }, blinkAt: 1 + seed, ...rigBase() };
+    toon = true; olOn = ol;
     const root = rig.root, wood = '#b07f53', metal = '#6b6f78', mo = { metalness: .35, roughness: .5 };
     const sk = { roughness: .7 }, hm = { roughness: .55, side: T.DoubleSide }, cloth = { roughness: .9 };
     add(root, box(.42, .04, .42), wood, [0, .44, -.03], { receive: true });
     add(root, box(.42, .3, .03), wood, [0, .76, -.25]);
     for (const [x, z] of [[-.19, -.22], [.19, -.22], [-.19, .16], [.19, .16]]) add(root, cyl(.015, .015, .44, 8), metal, [x, .22, z], { mat: mo });
     for (const sx of [-.19, .19]) add(root, cyl(.013, .013, .36, 8), metal, [sx, .66, -.24], { mat: mo });
-    for (const sx of [1, -1]) {   // 다리
-      add(root, cap(.072, .2), '#2a2f3a', [sx * .1, .5, .16], { rot: [Math.PI / 2, 0, 0], mat: cloth });
-      add(root, cap(.058, .26), '#2a2f3a', [sx * .1, .3, .33], { mat: cloth });
-      add(root, sph(.075), '#3a3f4b', [sx * .1, .06, .38], { scale: [1, .7, 1.5], mat: { roughness: .5 } });
-    }
+    rig.legs = [1, -1].map(sx => {   // 다리: 허벅지 → 무릎 → 발목. root 에 붙여서 몸을 숙여도 엉덩이가 의자에서 뜨지 않는다
+      const th = grp(root, [sx * .1, .5, -.01]); th.rotation.x = -Math.PI / 2;
+      add(th, cap(.072, .2), '#2a2f3a', [0, -.17, 0], { mat: cloth, ol: true });
+      const kn = grp(th, [0, -.34, 0]); kn.rotation.x = Math.PI / 2;
+      add(kn, cap(.058, .26), '#2a2f3a', [0, -.2, 0], { mat: cloth, ol: true });
+      add(grp(kn, [0, -.44, 0]), sph(.075), '#3a3f4b', [0, 0, .05], { scale: [1, .7, 1.5], mat: { roughness: .5 }, ol: true });
+      return { th, kn };
+    });
     // 책상(학생 앞쪽 = +z)
     const desk = rig.desk = grp(root, [0, 0, .52]);
     add(desk, box(.98, .04, .58), '#d7a86e', [0, .74, 0], { receive: true, mat: { roughness: .6 } });
@@ -341,15 +398,16 @@ const V = (() => {
     add(desk, box(.9, .03, .46), '#a8733f', [0, .6, .02]);
     for (const [x, z] of [[-.44, -.24], [.44, -.24], [-.44, .24], [.44, .24]]) add(desk, cyl(.017, .017, .74, 8), metal, [x, .37, z], { mat: mo });
     rig.paper = add(desk, box(.24, .004, .32), PAPER, [0, .764, -.04], { receive: true });
-    // 몸: 재킷 + 흰 깃 + 넥타이/리본
-    const body = rig.body = grp(root, [0, .49, 0]);
-    add(body, cap(.165, .24), shirt, [0, .27, 0], { scale: [1.12, 1, .85], mat: cloth });
-    add(body, new T.TorusGeometry(.075, .024, 8, 20), PAPER, [0, .515, .01], { rot: [Math.PI / 2, 0, 0], cast: false });
-    add(body, new T.CircleGeometry(.075, 3), PAPER, [0, .45, .142], { rot: [-.25, 0, -Math.PI / 2], scale: [1.25, 1, 1], cast: false });
-    if (tie) add(body, box(.036, .15, .012), '#b8322b', [0, .41, .15], { rot: [-.28, 0, 0], cast: false });
-    else for (const sx of [1, -1]) add(body, box(.06, .03, .014), '#b8322b', [sx * .03, .49, .148], { rot: [-.3, 0, sx * .35], cast: false });
-    add(body, cyl(.052, .052, .1, 12), skin, [0, .55, 0], { mat: sk });
-    const head = rig.head = grp(body, [0, .58, 0]);
+    // 몸: 엉덩이 → 허리 → 목 → 머리. 재킷 + 흰 깃 + 넥타이/리본
+    const hips = rig.hips = grp(root, [0, .49, 0]), body = rig.spine = grp(hips, [0, .04, 0]);
+    add(body, cap(.165, .24), shirt, [0, .23, 0], { scale: [1.12, 1, .85], mat: cloth, ol: true });
+    add(body, new T.TorusGeometry(.075, .024, 8, 20), PAPER, [0, .475, .01], { rot: [Math.PI / 2, 0, 0], cast: false });
+    add(body, new T.CircleGeometry(.075, 3), PAPER, [0, .41, .142], { rot: [-.25, 0, -Math.PI / 2], scale: [1.25, 1, 1], cast: false });
+    if (tie) add(body, box(.036, .15, .012), '#b8322b', [0, .37, .15], { rot: [-.28, 0, 0], cast: false });
+    else for (const sx of [1, -1]) add(body, box(.06, .03, .014), '#b8322b', [sx * .03, .45, .148], { rot: [-.3, 0, sx * .35], cast: false });
+    const neck = rig.neck = grp(body, [0, .46, 0]);
+    add(neck, cyl(.052, .052, .1, 12), skin, [0, .05, 0], { mat: sk });
+    const head = rig.head = grp(neck, [0, .08, 0]);
     add(head, sph(.25, 32, 24), skin, [0, .22, 0], { scale: [1, .96, .95], mat: sk });
     for (const sx of [1, -1]) add(head, sph(.045, 12, 10), skin, [sx * .243, .2, 0], { mat: sk });
     const cut = new T.SphereGeometry(.264, 32, 20, 0, Math.PI * 2, 0, 1.72);
@@ -359,83 +417,168 @@ const V = (() => {
     if (style === 'pony') { add(head, sph(.09), hair, [0, .34, -.27], { mat: hm }); add(head, cap(.06, .2), hair, [0, .16, -.33], { rot: [.35, 0, 0], mat: hm }); }
     if (style === 'twin') for (const sx of [1, -1]) add(head, sph(.1), hair, [sx * .27, .12, -.04], { scale: [1, 1.2, 1], mat: hm });
     if (style === 'curly') [[-.16, .42, 0], [0, .47, .02], [.16, .42, 0], [-.1, .44, -.14], [.1, .44, -.14], [0, .4, .16]].forEach(p => add(head, sph(.1, 16, 12), hair, p, { mat: hm }));
+    // 외곽선: 머리·귀·앞머리·머리 덩어리(열린 머리카락 껍질은 제외)
+    if (olOn) head.children.filter(m => !(m.geometry.parameters.thetaLength < Math.PI)).forEach(m => outline(m, m.geometry));
     face(head, .235, .222, 1, rig);
     rig.sweat = add(head, sph(.026, 16, 12), '#8fc3e0', [.19, .3, .17], { scale: [.8, 1.35, .7], cast: false, mat: { roughness: .2 } });
     rig.ear = add(head, sph(.035, 12, 10), PAPER, [-.262, .2, .01], { scale: [.7, 1, 1] });
-    rig.arms = { p: arm(body, 1, .45, .2, .052, .22, .24, shirt, skin, .055), n: arm(body, -1, .45, .2, .052, .22, .24, shirt, skin, .055) };
-    rig.pen = add(rig.arms.n.el, cyl(.009, .009, .16, 8), '#2b4fa8', [.02, -.22, .06], { rot: [.9, 0, -.3] });
-    rig.held = phoneModel(); rig.held.position.set(0, -.34, .03); rig.arms.p.el.add(rig.held);
-    rig.lap = phoneModel(); rig.lap.position.set(.03, -.3, .05); rig.lap.rotation.set(-1.2, 0, 0); rig.arms.n.el.add(rig.lap);
-    rig.note = add(rig.arms.n.el, box(.11, .14, .004), '#f3e6b0', [.02, -.31, .05], { rot: [-1.0, 0, 0] });
-    rig.palm = add(rig.arms.n.el, new T.CircleGeometry(.04, 16), new T.MeshBasicMaterial({ color: '#2b4fa8' }), [.0, -.255, .057], { scale: [1, .25, 1], cast: false });
+    rig.arms = { p: arm(body, 1, .41, .2, .052, .22, .24, shirt, skin, .055, true), n: arm(body, -1, .41, .2, .052, .22, .24, shirt, skin, .055, true) };
+    const wn = rig.arms.n.wr;
+    rig.pen = add(wn, cyl(.009, .009, .16, 8), '#2b4fa8', [.02, .02, .06], { rot: [.9, 0, -.3] });
+    rig.held = phoneModel(); rig.held.position.set(0, -.1, .03); rig.arms.p.wr.add(rig.held);
+    rig.lap = phoneModel(); rig.lap.position.set(.03, -.06, .05); rig.lap.rotation.set(-1.2, 0, 0); wn.add(rig.lap);
+    const scr = rig.lap.children[1]; scr.material = scr.material.clone(); rig.lapScr = scr.material;   // 깜빡이는 화면은 따로
+    rig.note = add(wn, box(.11, .14, .004), '#f3e6b0', [.02, -.07, .05], { rot: [-1.0, 0, 0] });
+    rig.palm = add(wn, new T.CircleGeometry(.04, 16), new T.MeshBasicMaterial({ color: '#2b4fa8' }), [.0, -.015, .057], { scale: [1, .25, 1], cast: false });
     rig.watch = add(rig.arms.n.el, cyl(.058, .058, .04, 16), '#3a3f4b', [0, -.17, 0], { mat: { emissive: '#9fc6c9', emissiveIntensity: .6 } });
     rig.bubble = bubbleNode(); rig.bubble.position.set(.44, 1.5, 0); root.add(rig.bubble);
     rig.stamp = plane(canvasTex(128, 128, (ctx, rd) => { const im = markImg('x', rd); if (im) ctx.drawImage(im, 0, 0, 128, 128); }), .26, .26);
     rig.stamp.position.set(-.36, 1.5, .2); rig.stamp.renderOrder = 6; rig.stamp.material.depthTest = false; root.add(rig.stamp);
+    freeze(root, [rig.paper, rig.smile, rig.open, rig.bubble, rig.stamp, ...rig.brows]);
+    toon = olOn = false;
     return rig;
   }
   function makeMascot() {
-    const rig = { kind: 'mascot', tok: TOK_M, nb: 0, seed: 2.2, cur: { ...P0, ...M_REST }, vel: {}, tgt: { ...P0, ...M_REST }, flags: new Set(), blinkAt: 2, root: new T.Group() };
+    const rig = { kind: 'mascot', tok: TOK_M, nb: 0, seed: 2.2, cur: { ...P0, ...M_REST }, tgt: { ...P0, ...M_REST }, blinkAt: 2, ...rigBase() };
+    toon = olOn = true;
     const root = rig.root, hex = (a, b, h) => { const g = cyl(a, b, h, 6); g.rotateY(Math.PI / 6); return g; };
+    const flat = g => { g = g.toNonIndexed(); g.computeVertexNormals(); return g; };   // 툰 재질엔 flatShading 이 없어서 면마다 법선을 따로 둔다
     for (const sx of [1, -1]) { add(root, cyl(.018, .018, .16, 8), NAVY, [sx * .09, .1, 0]); add(root, sph(.07), RED, [sx * .09, .04, .04], { scale: [1, .6, 1.5], mat: { roughness: .5 } }); }
     const body = rig.body = grp(root, [0, .16, 0]), ferrule = { metalness: .6, roughness: .35 };
-    add(body, cyl(.19, .19, .12, 24), '#e58a8a', [0, .06, 0], { mat: { roughness: .9 } });
+    add(body, cyl(.19, .19, .12, 24), '#e58a8a', [0, .06, 0], { mat: { roughness: .9 }, ol: true });
     add(body, cyl(.205, .205, .08, 24), '#c0c4c8', [0, .16, 0], { mat: ferrule });
     for (const y of [.13, .19]) add(body, cyl(.209, .209, .012, 24), '#a7abb0', [0, y, 0], { mat: ferrule, cast: false });
-    add(body, hex(.2, .2, .6), '#f2b42c', [0, .49, 0], { mat: { roughness: .5, flatShading: true } });
-    add(body, hex(.203, .203, .012), '#d99a1c', [0, .79, 0], { mat: { roughness: .5, flatShading: true }, cast: false });
-    add(body, hex(0, .2, .3), '#e8c9a0', [0, .94, 0], { mat: { roughness: .85, flatShading: true } });
-    add(body, cyl(0, .068, .102, 6), LINE, [0, 1.04, 0], { rot: [0, Math.PI / 6, 0], mat: { roughness: .6, flatShading: true } });
+    const hb = hex(.2, .2, .6), hw = hex(0, .2, .3);
+    add(body, flat(hb), '#f2b42c', [0, .49, 0], { mat: { roughness: .5, flatShading: true }, ol: hb });
+    add(body, flat(hex(.203, .203, .012)), '#d99a1c', [0, .79, 0], { mat: { roughness: .5, flatShading: true }, cast: false });
+    add(body, flat(hw), '#e8c9a0', [0, .94, 0], { mat: { roughness: .85, flatShading: true }, ol: hw });
+    add(body, flat(cyl(0, .068, .102, 6)), LINE, [0, 1.04, 0], { rot: [0, Math.PI / 6, 0], mat: { roughness: .6, flatShading: true } });
     rig.head = grp(body, [0, .3, 0]);
     face(rig.head, .32, .176, .85, rig, true);
     rig.sweat = new T.Group(); rig.ear = new T.Group();
     rig.arms = { p: arm(body, 1, .56, .19, .022, .2, .2, INK, INK, .045), n: arm(body, -1, .56, .19, .022, .2, .2, INK, INK, .045) };
+    freeze(root, [rig.smile, rig.open, ...rig.brows]);
+    toon = olOn = false;
     return rig;
   }
-  function setTokens(rig, str) {
+  // ago = 그 동작이 몇 초 전에 일어났어야 하는지(되감기·장면 중간 진입). 1회 동작·루프의 시작 시각을 그만큼 앞당긴다
+  function setTokens(rig, str, ago = 0) {
+    const now = clock - ago, wasW = rig.flags.has('writing'), clip = name => rig.clips.push({ name, t0: now });
     for (const tk of str.split(' ').filter(Boolean)) {
       if (tk.startsWith('bub:')) { const b = rig.bubble; if (!b) continue; rig.bub = tk.slice(4); if (rig.bub) { b.userData.st.text = rig.bub; b.userData.tex.redraw(); } continue; }
       if (tk[0] === '!') { rig.flags.delete(tk.slice(1)); continue; }
       const f = rig.tok[tk];
       if (f) {
         Object.assign(rig.tgt, f(rig.nb));
-        if (tk.startsWith('face-')) rig.face = tk;
-        if (tk.startsWith('arm-')) rig.armTok = tk;
+        if (tk.startsWith('face-')) {
+          if (tk !== rig.face) rig.faceAt = now;
+          rig.face = tk;
+          if (tk === 'face-shock') clip('shock');
+        }
+        if (tk.startsWith('arm-')) {
+          if (tk !== rig.armTok) { rig.armAt = now; if (tk === 'arm-up') clip('up'); if (tk === 'arm-down' && wasW) clip('down'); }
+          if (tk === 'arm-point') clip('point');
+          rig.armTok = tk;
+        }
+        if (tk.startsWith('look-') || tk === 'peek') { if (tk !== rig.look) rig.lookAt = now; rig.look = tk; }
       } else rig.flags.add(tk);
-      if (tk === 'caught') rig.caughtAt = clock;
-      if (tk === 'jump') rig.jumpAt = clock;
+      if (tk === 'caught') rig.caughtAt = now;
+      if (tk === 'jump') rig.jumpAt = now;
     }
   }
   function resetRig(rig, str) {
-    rig.flags.clear(); rig.bub = ''; rig.face = 'face-smile'; rig.armTok = 'arm-rest';
-    Object.assign(rig.tgt, P0, rig.kind === 'mascot' ? M_REST : REST);
+    rig.flags.clear(); rig.bub = ''; rig.face = 'face-smile'; rig.armTok = 'arm-rest'; rig.look = 'look-c';
+    Object.assign(rig.tgt, P0, rig.tok['arm-rest']());
     setTokens(rig, str || '');
   }
-  const snapRig = rig => { Object.assign(rig.cur, rig.tgt); rig.vel = {}; rig.bubS = rig.bub ? 1 : 0; };
-  function applyRig(rig, dt, talk) {
-    const c = rig.cur, f = rig.flags, t = clock, s = rig.seed, m = rig.kind === 'mascot';
-    for (const k in rig.tgt) {   // 스프링: 살짝 넘쳤다가 돌아오며 멈춘다
-      const v = (rig.vel[k] || 0) + ((rig.tgt[k] - c[k]) * 110 - (rig.vel[k] || 0) * 15) * dt;
-      rig.vel[k] = v; c[k] += v * dt;
+  const goal = (rig, k) => rig.tgt[k] + ((XA[rig.armTok] || {})[k] || 0) + ((XA[rig.face] || {})[k] || 0);
+  const snapRig = rig => {
+    for (const k in rig.tgt) rig.cur[k] = goal(rig, k);
+    for (const k in rig.fw) rig.fw[k] = rig.flags.has(k) ? 1 : 0;
+    rig.vel = {}; rig.bubS = rig.bub ? 1 : 0; rig.snapO = true;
+  };
+  // 최종 자세 = 스프링(목표 자세) + 루프(시각) + 1회 동작
+  function applyRig(rig, dt, talk, vt) {
+    const c = rig.cur, f = rig.flags, t = clock, s = rig.seed, m = rig.kind === 'mascot', n = rig.nb, W = rig.fw;
+    const steps = dt > 1 / 60 ? 2 : 1, h = dt / steps;
+    for (let i = 0; i < steps; i++) for (const k in rig.tgt) {   // 스프링: 살짝 넘쳤다가 돌아오며 멈춘다
+      const [K, D] = SPR[k], v = clamp((rig.vel[k] || 0) + ((goal(rig, k) - c[k]) * K - (rig.vel[k] || 0) * D) * h, -5, 5);   // 장면 전환의 긴 프레임에도 한 번에 튀지 않게 속도 상한
+      rig.vel[k] = v; c[k] += v * h;
     }
-    const wr = f.has('writing') ? 1 : 0, wig = f.has('wiggle') ? 1 : 0, ju = clamp((t - (rig.jumpAt ?? -9)) / 1.5);
-    const hop = ju < 1 ? Math.abs(Math.sin(ju * Math.PI * 3)) * .22 * (1 - ju * .5) : 0;
-    rig.root.position.y = hop + (f.has('cheer') ? Math.abs(Math.sin(t * 6.5 + s)) * .07 : 0) + (m ? talk * .025 + Math.sin(t * 2 + s) * .008 : 0);
-    rig.body.rotation.set(c.bLean + (m ? c.hPitch * .4 + talk * .04 : 0) + wig * Math.sin(t * 8) * .03,
-      c.bYaw + (m ? c.hYaw * .6 + Math.sin(t * 1.3) * .05 : 0) + wig * Math.sin(t * 9) * .1, c.bRoll + wig * Math.sin(t * 9 + 1) * .07 + (m ? Math.sin(t * 1.7) * .03 : 0));
-    rig.body.scale.y = 1 + Math.sin(t * 1.7 + s) * .012 - hop * .1;
-    if (!m) rig.head.rotation.set(c.hPitch - talk * .07 + Math.sin(t * 6.3 + s) * .03 * talk + wr * Math.sin(t * 1.9 + s) * .03,
-      c.hYaw + Math.sin(t * 2.3 + s) * .06 * talk + Math.sin(t * .6 + s) * .03, Math.sin(t * .8 + s) * .03 + Math.sin(t * 4.1) * .04 * talk);
-    const A = rig.arms, wave = f.has('wave') ? Math.sin(t * 9) * .3 : 0, ges = m ? talk * Math.sin(t * 5) * .18 : 0;
-    A.p.sh.rotation.set(c.pSx + ges * .4, 0, c.pSz + wave + ges);
-    A.p.el.rotation.x = c.pEx - Math.abs(wave) * .3;
-    A.n.sh.rotation.set(c.nSx + wr * Math.sin(t * 11 + s) * .02 - ges * .3, 0, -c.nSz + wr * Math.sin(t * 13 + s) * .035 - ges * .6);
-    A.n.el.rotation.x = c.nEx + wr * Math.sin(t * 12 + s) * .05;
-    if (t > rig.blinkAt) rig.blinkAt = t + 2 + ((s * 7 + t * 13) % 3);
-    const eo = f.has('yawn') ? .12 : c.eOpen * (rig.blinkAt - t < .12 ? .1 : 1);
+    for (const k in W) W[k] += ((f.has(k) ? 1 : 0) - W[k]) * Math.min(1, dt * 8);   // 플래그 켜고 끌 때 튀지 않게
+    const o = {}, ad = (k, x) => { o[k] = (o[k] || 0) + x; };
+    rig.clips = rig.clips.filter(cl => clipAdd(o, cl.name, t - cl.t0));
+    // 팔 토큰 루프
+    const A = rig.armTok, at = t - rig.armAt;
+    if (A === 'arm-up') ad('pWx', .15 * Math.sin(TAU * 2 * at) * clamp(1 - at / 1.2));
+    else if (A === 'arm-palm') { const w = win(at % 2.4, 1.6, 2.0, .12); ad('nSx', .25 * w); ad('eY', .6 * w); }
+    else if (A === 'arm-slip') { ad('hPitch', -.35 * win(at % 3, 2.4, 2.8, .1)); ad('nWx', .08 * Math.sin(TAU * 3 * t)); }
+    else if (A === 'arm-hold') ad('pWx', .06 * Math.sin(TAU * 1.6 * t));
+    else if (A === 'arm-cheer') { ad('pEx', .3 * Math.sin(TAU * 4 * t)); ad('nEx', -.3 * Math.sin(TAU * 4 * t)); }
+    // 표정·시선 루프
+    if (rig.face === 'face-sweat') ad('hYaw', .05 * Math.sin(TAU * 1.3 * t));
+    if (rig.face === 'face-sly' && !m) {   // 3초마다 카메라 쪽으로 슬쩍 눈동자
+      const w = win((t - rig.faceAt) % 3, 2.5, 2.8, .06);
+      if (w) ad('eX', (Math.sign(rig.head.worldToLocal(tmpV.copy(camera.position)).x) * .7 - c.eX) * w);
+    }
+    if (rig.look === 'peek') ad('hYaw', -n * .6 * win((t - rig.lookAt) % 2.6 / 2.6, .7, .85, .03));   // 감독 쪽 흘끔
+    // 플래그
+    if (W.writing > .001) {   // 한 줄 1.6초: 손이 옆으로 가다 빠르게 돌아온다. 4줄마다 잠깐 쉼
+      const x = t / 1.6 + s, L = Math.floor(x), u = x - L, rest = L % 4 === 3 && u < .25, j = rest ? 0 : W.writing;
+      ad('nSz', W.writing * (rest ? -.1 : u < .88 ? -.1 + .2 * u : -.1 + .176 * (1 - (u - .88) / .12)));
+      ad('nSx', j * .02 * Math.sin(TAU * 7 * t)); ad('nEx', j * .05 * Math.sin(TAU * 5.3 * t + s)); ad('hPitch', W.writing * .02 * Math.sin(TAU * x));
+      if (rest) ad('nWx', -.15 * W.writing * win(u, 0, .25, .05));
+    }
+    if (W.wiggle > .001) { const w = W.wiggle; ad('plX', w * .03 * Math.sin(TAU * 4 * t)); ad('kneeL', w * .1 * Math.sin(TAU * 5 * t)); ad('kneeR', -w * .1 * Math.sin(TAU * 5 * t)); ad('bRoll', w * .05 * Math.sin(TAU * 4 * t + 1)); }
+    if (W.flip > .001) { const ph = Math.sin(t * 5 + s); ad('nSx', W.flip * (-.75 - c.nSx + .15 * ph)); ad('nEx', W.flip * (-1.1 - c.nEx + .2 * ph)); }
+    if (W.cheer > .001) { ad('kneeL', .15 * W.cheer); ad('kneeR', .15 * W.cheer); }
+    if (f.has('has-phone')) { ad('nWx', .05 * Math.sin(TAU * 3 * t)); rig.lapScr.emissiveIntensity = .5 + .2 * Math.sin(TAU * 1.5 * t); }
+    // 공통 대기: 시선 흔들림(재생 시각으로 정해져 되감아도 같다)·몸 흔들림·말할 때 고개
+    const g = Math.floor(vt / 2.4);
+    ad('eX', (hash(s, g) - .5) * .3); ad('eY', (hash(s + 7.1, g) - .5) * .3);
+    ad('plYaw', .035 * Math.sin(TAU * t / 7 + s));
+    ad('browL', talk * .012);
+    if (!m) {
+      ad('hPitch', -talk * .07 + Math.sin(t * 6.3 + s) * .03 * talk); ad('hYaw', Math.sin(t * 2.3 + s) * .06 * talk + Math.sin(t * .6 + s) * .03);
+      ad('hRoll', Math.sin(t * .8 + s) * .03 + Math.sin(t * 4.1) * .04 * talk);
+      if (talk > .35 && (rig.prevTalk || 0) <= .35 && t - (rig.gesAt ?? -9) > 1.2 && A === 'arm-rest' && !f.has('writing')) { rig.gesAt = t; rig.clips.push({ name: 'ges', t0: t }); }
+      rig.prevTalk = talk;
+    }
+    // 루프·1회 동작 몫은 40ms 저역 통과: 토큰이 바뀌어 루프가 켜지고 꺼질 때 튀지 않게(되감기 직후엔 바로 맞춤)
+    const os = rig.os, ke = rig.snapO ? 1 : 1 - Math.exp(-dt * 25);
+    rig.snapO = false;
+    for (const k in o) if (!(k in os)) os[k] = 0;
+    for (const k in os) os[k] += ((o[k] || 0) - os[k]) * ke;
+    const v = k => c[k] + (os[k] || 0);
+    const ju = clamp((t - (rig.jumpAt ?? -9)) / 1.5), hop = ju < 1 ? Math.abs(Math.sin(ju * Math.PI * 3)) * .22 * (1 - ju * .5) : 0;
+    const AR = rig.arms;
+    if (m) {
+      rig.root.position.y = hop + talk * .025 + Math.sin(t * 2 + s) * .008;
+      rig.body.rotation.set(v('bLean') + v('hPitch') * .4 + talk * .04, v('bYaw') + v('hYaw') * .6 + Math.sin(t * 1.3) * .05, v('bRoll') + Math.sin(t * 1.7) * .03);
+      rig.body.scale.y = 1 + Math.sin(t * 1.7 + s) * .012 - hop * .1;
+      const wave = W.wave * Math.sin(t * 9) * .3, ges = talk * Math.sin(t * 5) * .18;
+      AR.p.sh.rotation.set(v('pSx') + ges * .4, 0, v('pSz') + wave + ges);
+      AR.p.el.rotation.x = v('pEx') - Math.abs(wave) * .3;
+      AR.n.sh.rotation.set(v('nSx') - ges * .3, 0, -v('nSz') - ges * .6);
+      AR.n.el.rotation.x = v('nEx');
+    } else {
+      rig.root.position.y = hop;
+      rig.hips.position.set(v('plX'), .49 + W.cheer * Math.abs(Math.sin(t * 6.5 + s)) * .07, 0);
+      rig.hips.rotation.y = v('plYaw') + .25 * v('bYaw');
+      rig.spine.rotation.set(v('bLean') + .12 * v('slump') + .1 * v('tense') + .012 * Math.sin(TAU * t / 3.6 + s), .75 * v('bYaw'), v('bRoll'));
+      const hp = v('hPitch'), hy = v('hYaw'), hr = v('hRoll'), sl = .06 * v('slump') + .08 * v('tense');
+      rig.neck.rotation.set(.35 * hp, .35 * hy, .35 * hr); rig.head.rotation.set(.65 * hp, .65 * hy, .65 * hr);
+      AR.p.sh.rotation.set(v('pSx'), 0, v('pSz') - sl); AR.p.el.rotation.x = v('pEx'); AR.p.wr.rotation.x = v('pWx');
+      AR.n.sh.rotation.set(v('nSx'), 0, -(v('nSz') - sl)); AR.n.el.rotation.x = v('nEx'); AR.n.wr.rotation.x = v('nWx');
+      [v('kneeL'), v('kneeR')].forEach((kv, i) => { rig.legs[i].th.rotation.x = -Math.PI / 2 - kv; rig.legs[i].kn.rotation.x = Math.PI / 2 + .6 * kv; });
+    }
+    // 눈 깜빡임(20%는 두 번)·눈동자·눈썹·입
+    if (t > rig.blinkAt) { rig.lastBlink = rig.blinkAt; rig.dbl = hash(s, rig.blinkAt) < .2; rig.blinkAt = t + 2 + ((s * 7 + t * 13) % 3); }
+    const sinceB = t - (rig.lastBlink ?? -9), shut = rig.blinkAt - t < .12 || (rig.dbl && sinceB > .1 && sinceB < .22);
+    const eo = f.has('yawn') ? .12 : v('eOpen') * (shut ? .1 : 1);
     rig.eyes.forEach(e => e.scale.y = Math.max(.08, eo));
-    rig.pupils.forEach(p => p.position.set(c.eX * .014, c.eY * .012, p.position.z));
-    rig.brows.forEach((b, i) => { b.rotation.z = (i ? -1 : 1) * c.brow; b.position.y = b.userData.y0 + c.browL; });
+    rig.pupils.forEach(p => p.position.set(v('eX') * .014, v('eY') * .012, p.position.z));
+    rig.brows.forEach((b, i) => { b.rotation.z = (i ? -1 : 1) * v('brow'); b.position.y = b.userData.y0 + v('browL'); });
     const open = Math.max(c.mO, talk);
     rig.open.visible = open > .1; rig.smile.visible = !rig.open.visible;
     rig.open.scale.set(1 - .3 * c.mO + talk * .1, Math.max(.2, open), 1);
@@ -561,7 +704,6 @@ const V = (() => {
     scene.add(new T.HemisphereLight('#fff4e4', '#7d6146', .5));
     const sun = new T.DirectionalLight('#ffe6bf', 1.4);
     sun.position.set(-4, 5.5, 1.5); sun.target.position.set(.5, .5, -.5); scene.add(sun.target);
-    const low = (navigator.hardwareConcurrency || 8) <= 4 || Math.min(screen.width, screen.height) < 820;
     sun.castShadow = true; sun.shadow.mapSize.setScalar(low ? 1024 : 2048); sun.shadow.bias = -.0004; sun.shadow.radius = 4;
     Object.assign(sun.shadow.camera, { left: -6, right: 6, top: 6, bottom: -6, near: 1, far: 16 });
     scene.add(sun);
@@ -571,8 +713,8 @@ const V = (() => {
     const kid = (id, o, x, z) => { const r = makeKid(o); r.root.position.set(x, 0, z); r.root.rotation.y = Math.PI; r.baseY = 0; scene.add(r.root); return r; };
     chars.jun = kid('jun', { hair: '#1d1a19', shirt: '#2c3a5c', skin: '#f6d2b4', style: 'short', nb: -1, seed: .3 }, -.4, 0);
     chars.sol = kid('sol', { hair: '#4a3426', shirt: '#5a3d3a', skin: '#f9dcc4', style: 'bob', tie: false, nb: 1, seed: 1.9 }, 1.4, 0);
-    [['#2e2420', '#3d4f3a', '#e2b08a', 'curly', -1.35], ['#6b4a33', '#2f4b5e', '#eec3a1', 'pony', .5], ['#151820', '#7a5a3a', '#d9a27c', 'twin', 2.35]].forEach(([hair, shirt, skin, style, x], i) =>
-      bgKids.push(kid('bg' + i, { hair, shirt, skin, style, tie: !i, nb: i ? -1 : 1, seed: 3 + i * 1.3 }, x, 1.75)));
+    [['#2e2420', '#3d4f3a', '#e2b08a', 'curly', -1.8], ['#6b4a33', '#2f4b5e', '#eec3a1', 'pony', .5], ['#151820', '#7a5a3a', '#d9a27c', 'twin', 2.8]].forEach(([hair, shirt, skin, style, x], i) =>
+      bgKids.push(kid('bg' + i, { hair, shirt, skin, style, tie: !i, nb: i ? -1 : 1, seed: 3 + i * 1.3, ol: !low }, x, 1.9)));
     chars.mascot = makeMascot();
     chars.mascot.root.position.set(-1.45, 0, -2.9); chars.mascot.root.rotation.y = .25;
     scene.add(chars.mascot.root);
@@ -581,13 +723,13 @@ const V = (() => {
 
   /* ───────── 카메라 ───────── */
   const SHOTS = {   // [위치, 바라보는 곳]. z>0 은 교실 뒤에서 칠판 쪽, z<0 은 칠판 쪽에서 학생 쪽
-    wide: [[.5, 2.45, 4.1], [.5, 1.5, -4]],
+    wide: [[.5, 3.0, 3.3], [.5, 1.2, -3.2]],
     board: [[.3, 2.1, 1.15], [.3, 1.7, -4]],
     host: [[-.7, 1.2, -.35], [-1.38, .78, -2.9]],
-    kids: [[.5, 1.55, -3.1], [.5, 1.1, 0]],
+    kids: [[.5, 1.55, -3.3], [.5, 1.2, 0]],
     floor: [[.5, 1.75, -3.9], [.5, .6, -.6]],
-    jun: [[-.95, 1.28, -2.15], [-.4, 1.04, 0]],
-    sol: [[1.95, 1.28, -2.15], [1.4, 1.04, 0]],
+    jun: [[-.4, 1.4, -2.3], [-.2, 1.05, 0]],
+    sol: [[1.4, 1.4, -2.3], [1.2, 1.05, 0]],
   };
   function setShot(name, snap) {
     const s = SHOTS[name], cut = snap || !cam.shot || Math.sign(SHOTS[cam.shot][0][2]) !== Math.sign(s[0][2]);
@@ -717,23 +859,25 @@ const V = (() => {
     stage = new T.Group(); scene.add(stage); objs = {};
   }
   function doAct(e) {
-    const [id, cmd] = e.a;
+    const [id, cmd] = e.a, ago = Math.max(0, audio.currentTime - e.t);
     if (id === 'cam') return setShot(cmd, false);
     if (id === 'title') return setTitle(cmd);
-    if (id === 'bg') return bgKids.forEach(r => setTokens(r, cmd));
-    if (chars[id]) return setTokens(chars[id], cmd);
+    if (id === 'bg') return bgKids.forEach(r => setTokens(r, cmd, ago));
+    if (chars[id]) return setTokens(chars[id], cmd, ago);
     const o = objs[id];
     o.cmd = cmd; o.t0 = e.t;
     if (cmd === 'fly') o.node.visible = true;
   }
-  function enterScene(si, t) {
-    const sc = SC[SCENE_IDS[si]];
+  // snap = 되감기·건너뛰기: 자세를 바로 맞춘다. 이어 재생이면 목표만 바꿔 스프링으로 넘어간다(카메라는 늘 컷)
+  function enterScene(si, t, snap) {
+    const sc = SC[SCENE_IDS[si]], all = Object.values(chars).concat(bgKids);
     clearStage();
     sc.build(api);
     setTitle(sc.title);
     const init = sc.init || {};
     for (const id in chars) resetRig(chars[id], init[id]);
     bgKids.forEach(r => resetRig(r, init.bg));
+    if (snap) all.forEach(r => r.clips = []);
     timeline = [];
     CUES.filter(c => c.s === si).forEach(c => {
       const b = sc.beats[c.b];
@@ -744,7 +888,7 @@ const V = (() => {
     tlPos = 0; sceneIdx = si; cam.shot = '';
     while (tlPos < timeline.length && timeline[tlPos].t <= t) doAct(timeline[tlPos++]);
     cam.pos.copy(cam.tpos); cam.look.copy(cam.tlook);
-    Object.values(chars).concat(bgKids).forEach(snapRig);
+    if (snap) all.forEach(snapRig);
   }
   const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
   function frame(now) {
@@ -755,15 +899,16 @@ const V = (() => {
     let i = 0;
     while (i + 1 < CUES.length && CUES[i + 1].t <= t) i++;
     const c = CUES[i];
-    if (c.s !== sceneIdx || t < lastT - .05) enterScene(c.s, t);
+    const snap = sceneIdx < 0 || t < lastT - .05 || t - lastT > .5;
+    if (c.s !== sceneIdx || snap) enterScene(c.s, t, true); // 장면 전환은 카메라가 컷이므로 자세도 컷(스프링으로 휘두르지 않음)
     else while (tlPos < timeline.length && timeline[tlPos].t <= t) doAct(timeline[tlPos++]);
     lastT = t;
     if (i !== cueIdx) { cueIdx = i; ui.who.textContent = { n: '또박이', jun: '준이', sol: '솔이' }[c.who]; ui.who.dataset.who = c.who; ui.text.textContent = c.text; }
     const speaking = !audio.paused && t >= c.v0 && t <= c.v1;
     amp += ((speaking ? (+ENV[Math.floor(t * 30)] || 0) / 9 : 0) - amp) * Math.min(1, dt * 22);
     const who = { n: 'mascot', jun: 'jun', sol: 'sol' }[c.who];
-    for (const id in chars) applyRig(chars[id], dt, id === who ? amp : 0);
-    bgKids.forEach(r => applyRig(r, dt, 0));
+    for (const id in chars) applyRig(chars[id], dt, id === who ? amp : 0, t);
+    bgKids.forEach(r => applyRig(r, dt, 0, t));
     for (const id in objs) updObj(objs[id], t);
     const k = Math.min(1, dt * 3.2);
     cam.pos.lerp(cam.tpos, k); cam.look.lerp(cam.tlook, k);
@@ -809,13 +954,15 @@ const V = (() => {
       ui.text.textContent = '이 기기에서는 3D 영상을 볼 수 없어요. 다른 브라우저(크롬·엣지)로 열어 주세요.';
       return;
     }
-    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
+    renderer.setPixelRatio(low ? 1 : Math.min(devicePixelRatio || 1, 1.5));
     renderer.outputEncoding = T.sRGBEncoding;
     renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
     scene = new T.Scene(); scene.background = new T.Color('#e9e1cf'); scene.fog = new T.Fog('#e9e1cf', 10, 20);
     camera = new T.PerspectiveCamera(35, 16 / 9, .1, 60);
-    buildRoom(); buildCast();
+    buildRoom();
+    scene.traverse(o => { o.updateMatrix(); o.matrixAutoUpdate = false; });   // 교실은 움직이지 않으니 행렬을 한 번만 계산
+    buildCast();
     const st = { text: '' }, tex = canvasTex(2496, 180, ctx => {
       ctx.font = `900 104px ${TFONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#f4f1e8';
       ctx.fillText(st.text, 1248, 94);
@@ -854,5 +1001,5 @@ const V = (() => {
     return bad;
   }
 
-  return { init, open, close, check, debug: () => ({ chars, cam, objs, sceneIdx, renderer }) };
+  return { init, open, close, check, debug: () => ({ chars, cam, objs, sceneIdx, renderer, bgKids, SHOTS, camera }) };
 })();
