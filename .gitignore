@@ -2,3 +2,4 @@
 *.hwpx
 *.hwp
 .playwright-mcp/
+.impeccable/

@@ -24,41 +24,42 @@ const G = (() => {
     ['tape', '수정테이프', 'desk', OKAY], ['analog', '아날로그 시계', 'desk', '전자식 화면이 없는 아날로그 시계는 둘 수 있어요.'],
   ];
   const ZONES = {
-    bag: { x: 16, y: 470, w: 290, h: 414, label: '가방·사물함', sub: '넣고 지퍼 잠그기', k: 'bag', color: '#6366f1' },
-    submit: { x: 1294, y: 470, w: 290, h: 414, label: '제출함', sub: '선생님께 제출', k: 'basket', color: '#ef4444' },
-    desk: { x: 440, y: 706, w: 720, h: 186, label: '책상 위에', sub: '두기', color: '#16a34a' },
+    bag: { x: 16, y: 470, w: 290, h: 414, label: '가방·사물함', sub: '넣고 지퍼 잠그기', k: 'bag', color: '#1f2a44' },
+    submit: { x: 1294, y: 470, w: 290, h: 414, label: '제출함', sub: '선생님께 제출', k: 'basket', color: '#d6322b' },
+    desk: { x: 440, y: 706, w: 720, h: 186, label: '책상 위에', sub: '두기', color: '#7a5410' },
   };
 
   // 부정행위(cheat:1)와 올바른 행동(cheat:0). % 는 옆자리 방향(l/r)으로 바뀐다
   const ACTS = [
-    { cheat: 1, cls: 'peek-% look-% face-sly', bub: '👀', msg: '다른 학생의 답안지를 보는 행위' },
-    { cheat: 1, cls: 'look-% face-sly', bub: '🤙', msg: '손동작·소리로 신호를 주고받는 행위' },
-    { cheat: 1, cls: 'arm-slip look-d face-sly lean-d', bub: '📃', msg: '컨닝 페이퍼를 보는 행위' },
-    { cheat: 1, cls: 'arm-palm look-l face-sly', bub: '✋', msg: '손바닥에 적어 놓고 보는 행위' },
-    { cheat: 1, cls: 'has-phone look-d lean-d face-sly', bub: '📱', msg: '휴대전화(무선기기)를 이용하는 행위' },
-    { cheat: 1, cls: 'has-watch look-l look-d face-sly', bub: '⌚', msg: '스마트 워치(무선기기)를 이용하는 행위' },
-    { cheat: 1, cls: 'has-ear face-sly look-u', bub: '🎧', msg: '무선 이어폰(무선기기)을 이용하는 행위' },
-    { cheat: 1, cls: 'look-% face-angry', bub: '💢', msg: '답을 보여 달라고 강요·위협하는 행위' },
-    { cheat: 1, cls: 'peek-% look-% face-smile', bub: '🔄', msg: '답안지를 바꾸어 대신 작성하려는 행위' },
-    { cheat: 0, cls: 'arm-up look-c face-smile', bub: '❓', msg: '궁금한 점이 있어 손을 든 거예요. 올바른 행동!' },
-    { cheat: 0, cls: 'flip look-d', bub: '📄', msg: '문제지 면수와 인쇄 상태를 확인하는 중이에요.' },
-    { cheat: 0, cls: 'look-u face-smile', bub: '🕐', msg: '교실 시계로 남은 시간을 확인했어요.' },
-    { cheat: 0, cls: 'look-u face-o', bub: '🤔', msg: '문제를 열심히 생각하는 중이에요.' },
-    { cheat: 0, cls: 'yawn', bub: '🥱', msg: '하품은 부정행위가 아니에요.' },
-    { cheat: 0, cls: 'look-d face-smile', bub: '✏️', msg: '수정테이프로 답을 고치는 중이에요.' },
+    { cheat: 1, cls: 'peek-% look-% face-sly', bub: '흘끔', msg: '다른 학생의 답안지를 보는 행위' },
+    { cheat: 1, cls: 'look-% face-sly', bub: '똑똑', msg: '손동작·소리로 신호를 주고받는 행위' },
+    { cheat: 1, cls: 'arm-slip look-d face-sly lean-d', bub: 'cheatnote', msg: '컨닝 페이퍼를 보는 행위' },
+    { cheat: 1, cls: 'arm-palm look-l face-sly', bub: '손바닥', msg: '손바닥에 적어 놓고 보는 행위' },
+    { cheat: 1, cls: 'has-phone look-d lean-d face-sly', bub: 'phone', msg: '휴대전화(무선기기)를 이용하는 행위' },
+    { cheat: 1, cls: 'has-watch look-l look-d face-sly', bub: 'smartwatch', msg: '스마트 워치(무선기기)를 이용하는 행위' },
+    { cheat: 1, cls: 'has-ear face-sly look-u', bub: 'headset', msg: '무선 이어폰(무선기기)을 이용하는 행위' },
+    { cheat: 1, cls: 'look-% face-angry', bub: '보여줘!', msg: '답을 보여 달라고 강요·위협하는 행위' },
+    { cheat: 1, cls: 'peek-% look-% face-smile', bub: '바꿔', msg: '답안지를 바꾸어 대신 작성하려는 행위' },
+    { cheat: 0, cls: 'arm-up look-c face-smile', bub: '질문!', msg: '궁금한 점이 있어 손을 든 거예요. 올바른 행동!' },
+    { cheat: 0, cls: 'flip look-d', bub: 'paper', msg: '문제지 면수와 인쇄 상태를 확인하는 중이에요.' },
+    { cheat: 0, cls: 'look-u face-smile', bub: '몇 시?', msg: '교실 시계로 남은 시간을 확인했어요.' },
+    { cheat: 0, cls: 'look-u face-o', bub: '음…', msg: '문제를 열심히 생각하는 중이에요.' },
+    { cheat: 0, cls: 'yawn', bub: '하암', msg: '하품은 부정행위가 아니에요.' },
+    { cheat: 0, cls: 'look-d face-smile', bub: 'tape', msg: '수정테이프로 답을 고치는 중이에요.' },
   ];
   // 14명: 뒷줄 5 · 가운뎃줄 4 · 앞줄 5. 줄마다 엇갈려 앉아 뒷사람 얼굴이 가려지지 않는다
   const ROWS = [[430, .45, [190, 495, 800, 1105, 1410]], [615, .55, [342, 647, 952, 1257]], [845, .66, [190, 495, 800, 1105, 1410]]];
   const SEATS = ROWS.flatMap(([y, s, xs], r) => xs.map((x, c) => ({ x, y, s, r, c, n: xs.length })));
-  const HAIR = ['#2b211b', '#5b3a29', '#1f2937', '#7c4a1e', '#111827', '#4a3325', '#3b2a20'];
-  const SHIRT = ['#60a5fa', '#f472b6', '#34d399', '#fbbf24', '#a78bfa', '#fb923c', '#38bdf8', '#f87171', '#4ade80'];
+  const HAIR = ['#1d1a19', '#2e2420', '#4a3426', '#6b4a33', '#151820', '#3b2c26', '#5a4636'];
+  const SHIRT = ['#2c3a5c', '#3d4f3a', '#5a3d3a', '#6f7682', '#2f4b5e', '#7a5a3a'];
+  const SKINS = ['#f6d2b4', '#eec3a1', '#e2b08a', '#f9dcc4', '#d9a27c'];
   const STYLE = ['short', 'bob', 'curly', 'pony', 'short', 'twin', 'bob', 'short', 'pony'];
   // 교시가 지날수록 빨라지고, 동시에 여러 명이 움직인다
   const WAVES = [{ name: '1교시', cheats: 4, decoys: 2, gap: 2300, life: 4300, max: 1 },
     { name: '2교시', cheats: 5, decoys: 3, gap: 1500, life: 3600, max: 2, pair: 1 },
     { name: '3교시', cheats: 6, decoys: 4, gap: 1050, life: 3000, max: 3, pair: 1, note: 1 }];
-  const NOTE = { cheat: 1, cls: 'arm-slip look-d face-sly', bub: '📃', msg: '쪽지(컨닝 페이퍼)를 주고받는 행위' };
-  const PAIR = { cheat: 1, cls: 'look-% face-sly', bub: '🤙', msg: '손동작·소리로 신호를 주고받는 행위' };
+  const NOTE = { cheat: 1, cls: 'arm-slip look-d face-sly', bub: 'cheatnote', msg: '쪽지(컨닝 페이퍼)를 주고받는 행위' };
+  const PAIR = { cheat: 1, cls: 'look-% face-sly', bub: '똑똑', msg: '손동작·소리로 신호를 주고받는 행위' };
   const HUNT_N = 3, TOTAL = HUNT_N * 2 + WAVES.reduce((a, w) => a + w.cheats + (w.pair || 0) * 2 + (w.note || 0), 0);
   const BEST_KEY = 'examwarning-best';
 
@@ -82,13 +83,13 @@ const G = (() => {
   function over(html) { const o = $('#gOver'); o.innerHTML = html; o.hidden = !html; }
   function hud() {
     $('#gScore').textContent = st.score + '점';
-    $('#gHearts').textContent = st.hearts === undefined ? '' : '❤️'.repeat(Math.max(0, st.hearts)) + '🤍'.repeat(Math.max(0, st.maxHearts - Math.max(0, st.hearts)));
+    $('#gHearts').textContent = st.hearts === undefined ? '' : '●'.repeat(Math.max(0, st.hearts)) + '○'.repeat(Math.max(0, st.maxHearts - Math.max(0, st.hearts)));
     if (st.mode === 'desk') return void ($('#gGoal').textContent = `남은 물건 ${st.items.filter(i => !i.done).length}개 · 실수 ${st.miss}번`);
     const c = $('#gCombo'), m = mult();
-    c.hidden = st.combo < 2; c.textContent = `🔥 ${st.combo}연속${m > 1 ? ' ×' + m : ''}`; c.classList.toggle('hot', m > 1);
+    c.hidden = st.combo < 2; c.textContent = `${st.combo}연속${m > 1 ? ' ×' + m : ''}`; c.classList.toggle('hot', m > 1);
     $('#gGoal').textContent = `잡은 부정행위 ${st.caught} / ${TOTAL}`;
   }
-  const stars = n => '⭐'.repeat(n) + '☆'.repeat(3 - n);
+  const stars = n => '★'.repeat(n) + '☆'.repeat(3 - n);
   const logList = log => log.length ? `<ul class="miss">${[...new Set(log)].map(l => `<li>${l}</li>`).join('')}</ul>` : '';
   const svgPoint = e => { const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); };
 
@@ -100,23 +101,25 @@ const G = (() => {
       ({ k, name, cat, why, tries: 0, done: false, home: i < 5 ? [480 + i * 160, 462] : [560 + (i - 5) * 160, 612] }));
     st = { mode: 'desk', items, score: 0, miss: 0, log: [], sel: null, drag: null, counts: { bag: 0, submit: 0, desk: 0 } };
 
-    const zone = ([id, z]) => `<g class="zone" id="z-${id}"><rect class="zone-bg" x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}" rx="26"
-        fill="#fff" fill-opacity=".8" stroke="${z.color}" stroke-width="5" stroke-dasharray="16 10" opacity=".9"/>
+    const zone = ([id, z]) => `<g class="zone" id="z-${id}"><rect class="zone-bg" x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}" rx="6"
+        fill="#fffdf7" fill-opacity=".6" stroke="${z.color}" stroke-width="4" stroke-dasharray="14 10"/>
       ${z.k ? `<g transform="translate(${z.x + z.w / 2} ${z.y + 170})">${K.prop(z.k, 1.7)}</g>
-        <text x="${z.x + z.w / 2}" y="${z.y + 330}" font-size="38" font-weight="800" fill="${z.color}" text-anchor="middle">${z.label}</text>
-        <text x="${z.x + z.w / 2}" y="${z.y + 374}" font-size="25" font-weight="600" fill="#475569" text-anchor="middle">${z.sub}</text>`
-      : `<text x="${z.x + 30}" y="${z.y + 86}" font-size="34" font-weight="800" fill="${z.color}">${z.label}</text>
-        <text x="${z.x + 30}" y="${z.y + 130}" font-size="34" font-weight="800" fill="${z.color}">${z.sub}</text>`}</g>`;
-    const item = (it, i) => { const w = [...it.name].length * 21 + 30; return `<g class="drag" data-i="${i}" transform="translate(${it.home[0]} ${it.home[1]})"><g class="in">
-      <circle class="ring-sel" r="64" fill="none" stroke="#14b8a6" stroke-width="9"/>
-      <circle r="52" fill="#fff" stroke="rgba(0,0,0,.16)" stroke-width="3"/>${K.prop(it.k, .6)}
-      <rect x="${-w / 2}" y="54" width="${w}" height="34" rx="17" fill="#0f172a" opacity=".86"/>
-      <text y="72" font-size="21" font-weight="700" fill="#fff" text-anchor="middle" dominant-baseline="central">${it.name}</text></g></g>`; };
-    svg.innerHTML = K.bgBack() + K.kid({ id: 'owner', x: 800, y: 470, s: 1, hair: '#2b211b', shirt: '#60a5fa' }) +
-      `<path d="M330 400H1270L1490 900H110Z" fill="#edc58c"/><path d="M330 400H1270L1276 414H324Z" fill="#fff" opacity=".35"/>` +
+        <text class="disp" x="${z.x + z.w / 2}" y="${z.y + 330}" font-size="38" font-weight="800" fill="${z.color}" text-anchor="middle">${z.label}</text>
+        <text x="${z.x + z.w / 2}" y="${z.y + 374}" font-size="25" font-weight="600" fill="#4e5770" text-anchor="middle">${z.sub}</text>`
+      : `<text class="disp" x="${z.x + 30}" y="${z.y + 86}" font-size="34" font-weight="800" fill="${z.color}">${z.label}</text>
+        <text class="disp" x="${z.x + 30}" y="${z.y + 130}" font-size="34" font-weight="800" fill="${z.color}">${z.sub}</text>`}</g>`;
+    const item = (it, i) => { const w = Math.min(150, [...it.name].length * 16 + 24); return `<g class="drag" data-i="${i}" transform="translate(${it.home[0]} ${it.home[1]})"><g class="in">
+      <circle class="ring-sel" r="64" fill="none" stroke="#d6322b" stroke-width="7" stroke-dasharray="12 8"/>
+      <circle r="52" fill="#fffdf7" stroke="#1f2a44" stroke-width="3"/>${K.prop(it.k, .6)}
+      <rect x="${-w / 2}" y="54" width="${w}" height="34" rx="3" fill="#1f2a44"/>
+      <text y="72" font-size="21" font-weight="700" fill="#fffdf7" text-anchor="middle" dominant-baseline="central">${it.name}</text></g></g>`; };
+    svg.innerHTML = K.bgBack() + K.kid({ id: 'owner', x: 800, y: 470, s: 1, hair: '#1d1a19', shirt: '#2c3a5c' }) +
+      `<path d="M330 400H1270L1490 900H110Z" fill="#d7a86e"/><path d="M1000 400H1270L1490 900H1150Z" fill="#1a2340" opacity=".12"/>
+      <path d="M560 400L470 900M800 400V900M1040 400L1130 900" stroke="#b98a52" stroke-width="2" opacity=".6"/>
+      <path d="M330 400H1270" stroke="#fff" stroke-width="6" opacity=".35"/><path d="M330 400H1270L1490 900H110Z" fill="none" stroke="#2a2522" stroke-width="4" stroke-linejoin="round"/>` +
       Object.entries(ZONES).map(zone).join('') + `<g id="items">${items.map(item).join('')}</g>`;
     K.set($('#owner'), 'nodesk face-o');
-    K.bubble($('#owner'), '🙏');
+    K.bubble($('#owner'), '부탁해');
 
     svg.addEventListener('pointerdown', deskDown);
     svg.addEventListener('pointermove', deskMove);
@@ -124,7 +127,7 @@ const G = (() => {
     svg.addEventListener('pointercancel', deskUp);
     hud();
     over(`<h2>시험 시작 5분 전!</h2><p>준이의 책상을 정리해 주세요. 물건을 <b>끌어서</b> 알맞은 곳에 놓아요.<br>(물건을 누른 다음 놓을 곳을 눌러도 돼요)</p>
-      <p>✏️ 시험 볼 때 쓰는 물건 → <b>책상 위</b><br>📚 그 밖의 물건 → <b>가방·사물함</b><br>📱 전자 기기 → <b>제출함</b></p>
+      <p>시험 볼 때 쓰는 물건 → <b>책상 위</b><br>그 밖의 물건 → <b>가방·사물함</b><br>전자 기기 → <b>제출함</b></p>
       <button class="btn" onclick="G.begin()">정리 시작</button>`);
   }
   const zoneAt = p => Object.keys(ZONES).find(id => { const z = ZONES[id]; return p.x >= z.x && p.x <= z.x + z.w && p.y >= z.y && p.y <= z.y + z.h; });
@@ -171,11 +174,12 @@ const G = (() => {
         : z === 'submit' ? '제출할 필요는 없어요. 사물함이나 가방에 넣어요.' : '책상 위에는 둘 수 없어요. 사물함이나 가방에 넣어요.';
       st.log.push(`<b>${it.name}</b> — ${it.why}`);
       place(el, ...it.home); el.classList.add('nope');
-      K.set(owner, 'face-sad'); K.bubble(owner, '😥'); K.sfx('bad');
+      K.set(owner, 'face-sad'); K.bubble(owner, '앗!'); K.sfx('bad');
       toast(`${it.name}: ${msg}`, 'bad');
       return hud();
     }
     it.done = true;
+    el.style.pointerEvents = 'none';   // 놓인 물건이 상자·책상 탭을 가로막지 않게
     st.score += it.tries ? 50 : 100;
     const n = st.counts[z]++, zz = ZONES[z];
     if (z === 'desk') {
@@ -186,7 +190,7 @@ const G = (() => {
       el.style.setProperty('--tx', '0px'); el.style.setProperty('--ty', '0px');
       el.classList.add('fly');
     }
-    K.set(owner, 'face-smile'); K.bubble(owner, z === 'submit' ? '📥' : z === 'bag' ? '🎒' : '👍'); K.sfx('ok');
+    K.set(owner, 'face-smile'); K.bubble(owner, z === 'submit' ? 'basket' : z === 'bag' ? 'bag' : '좋아!'); K.sfx('ok');
     toast(`${it.name}: ${it.why}`, 'good');
     hud();
     if (st.items.every(i => i.done)) later(finishDesk, 1200);
@@ -201,15 +205,7 @@ const G = (() => {
   }
 
   /* ───────── 2단계: 부정행위를 잡아라 ───────── */
-  const room = `<rect width="1600" height="900" fill="#fdf3dc"/><rect y="330" width="1600" height="570" fill="#e8caa0"/>
-    ${[410, 520, 670, 820].map(y => `<path d="M0 ${y}H1600" stroke="#d4b080" stroke-width="3"/>`).join('')}
-    <rect x="50" y="40" width="470" height="200" rx="10" fill="#a16207"/><rect x="62" y="52" width="446" height="176" rx="4" fill="#d9f99d"/>
-    <text x="285" y="92" font-size="30" font-weight="800" fill="#3f6212" text-anchor="middle">우리 반 게시판</text>
-    ${[0, 1, 2, 3].map(i => `<rect x="${88 + i * 104}" y="112" width="84" height="92" rx="6" fill="${['#fef08a', '#bae6fd', '#fecdd3', '#ddd6fe'][i]}" transform="rotate(${[-3, 2, -2, 3][i]} ${130 + i * 104} 158)"/>`).join('')}
-    <g transform="translate(730 136)">${[0, 1, 2, 3, 4, 5, 6, 7].map(c => [0, 1].map(r => `<rect x="${c * 100}" y="${r * 96}" width="94" height="90" rx="6" fill="#93c5fd" stroke="#3b82f6" stroke-width="3"/>
-      <circle cx="${c * 100 + 76}" cy="${r * 96 + 46}" r="5" fill="#1e3a8a"/>`).join('')).join('')}</g>
-    <g transform="translate(1560 70)"><circle r="34" fill="#fff" stroke="#475569" stroke-width="7"/><path d="M0 0V-21M0 0L15 6" stroke="#3b2f2f" stroke-width="5" stroke-linecap="round"/></g>
-    <rect y="322" width="1600" height="12" fill="#c9a36b"/>`;
+  const room = K.bgBack({ wins: [[30, 40], [204, 40]], board: [384, 40, 300, 178], lockers: [900, 156, 6], clock: [1556, 66, 34] });
   const mult = () => 1 + Math.min(4, Math.floor(st.combo / 3)) * .5;
   const kidEl = i => $('#k' + i);
   const free = () => SEATS.map((_, i) => i).filter(i => !st.busy[i]);
@@ -223,14 +219,15 @@ const G = (() => {
     try { best = +localStorage.getItem(BEST_KEY) || 0; } catch (e) {}
     st = { mode: 'watch', score: 0, hearts: tv ? 6 : 5, maxHearts: tv ? 6 : 5, caught: 0, combo: 0, maxCombo: 0, log: [], busy: {},
       wi: -1, w: null, queue: [], phase: 'ready', slow: tv ? 1.4 : 1, cheats: [], decoys: [], ids: 0, penal: new Set(), best };
-    svg.innerHTML = room + `<g id="wallbell" class="h" transform="translate(620 120)"><g class="in">${K.prop('bell', 1.1)}</g></g>` +
-      SEATS.map(({ x, y, s }, i) => K.kid({ id: 'k' + i, x, y, s, hair: HAIR[i % 7], shirt: SHIRT[i % 9], style: STYLE[(i * 4) % 9], blink: (i * .7) % 4, bub: .9 / s })).join('') + '<g id="fx"></g>';
+    svg.innerHTML = room + `<g id="wallbell" class="h" transform="translate(790 118)"><g class="in">${K.prop('bell', 1.1)}</g></g>` +
+      SEATS.map(({ x, y, s, r }, i) => K.kid({ id: 'k' + i, x, y, s, hair: HAIR[i % 7], shirt: SHIRT[i % 6], skin: SKINS[i % 5], tie: i % 2 === 0, style: STYLE[(i * 4) % 9],
+        blink: (i * .7) % 4, bub: .9 / s, tint: [.12, .06, 0][r], persp: (800 - x) * .06 })).join('') + '<g id="fx"></g>';
     SEATS.forEach((_, i) => idle(i));
     svg.addEventListener('click', e => { const k = e.target.closest('.kid'); if (k) tap(+k.id.slice(1)); });
     hud();
     over(`<h2>오늘은 내가 정직 지킴이!</h2><p>우리 반 14명이 시험을 봐요. <b>부정행위를 하는 학생</b>을 찾아 빠르게 눌러요.</p>
       <p>시작종 전 → 1교시 → 2교시 → 3교시 → 종료령<br>교시가 지날수록 빨라지고, 여러 명이 한꺼번에 움직여요.</p>
-      <p>🔥 연속으로 잡으면 점수가 <b>최대 3배</b>! 올바른 행동을 하는 학생을 누르면 ❤️가 줄어요.</p>
+      <p>연속으로 잡으면 점수가 <b>최대 3배</b>! 올바른 행동을 하는 학생을 누르면 ●가 줄어요.</p>
       ${best ? `<p class="best">최고 기록 ${best}점</p>` : ''}<button class="btn" onclick="G.begin()">감독 시작</button>`);
   }
   function idle(i) {
@@ -340,7 +337,7 @@ const G = (() => {
     el.classList.remove('timed');
     K.set(el, '!writing face-shock look-c caught'); K.bubble(el, '');
     popup(i, '+' + pts, 'good');
-    if (st.combo >= 3 && st.combo % 3 === 0) popup(i, `🔥 ${st.combo}연속!`, 'combo');
+    if (st.combo >= 3 && st.combo % 3 === 0) popup(i, `${st.combo}연속!`, 'combo');
     K.sfx('whistle', 1 + Math.min(st.combo, 12) * .035);
     toast(`딱 걸렸어요! ${msg}는 부정행위예요.`, 'good'); hud();
   }
@@ -358,7 +355,7 @@ const G = (() => {
     if (!b.act.cheat) {
       K.set(kidEl(i), 'face-sad'); kidEl(i).classList.remove('timed');
       release(i, 900);
-      popup(i, '💔', 'bad');
+      popup(i, '실수!', 'bad');
       return lose(`앗! ${b.act.msg}`);
     }
     grab(i, b.act.msg, Math.max(0, Math.round((1 - (Date.now() - b.t0) / b.life) * 50)));
@@ -371,12 +368,12 @@ const G = (() => {
 
   // ── 정해진 시간 안에 '해당 학생'을 모두 찾는 단계 (시작종 전 / 종료령 뒤)
   const HUNT_PRE = { phase: 'pre', name: '시작종 전', msg: '시작종이 울리기 전에 문제를 풀거나 답을 표시하는 행위', wrong: '앗! 인적 사항을 표기하거나 조용히 기다리는 학생이에요.',
-    intro: '📄 문제지를 받았어요. 시작종 전에는 인적 사항만 표기! 미리 푸는 학생 3명을 찾아요.',
+    intro: '문제지를 받았어요. 시작종 전에는 인적 사항만 표기! 미리 푸는 학생 3명을 찾아요.',
     bad: k => ['writing look-d face-sly', ['문제 풀기', '답 표시', '문제 풀기'][k]],
     ok: i => i % 3 === 0 ? ['writing look-d face-smile', '인적사항'] : ['arm-down look-c face-smile', ''],
-    next() { K.sfx('bell'); later(nextWave, 1500); toast('🔔 시작종이 울렸어요!'); } };
+    next() { K.sfx('bell'); later(nextWave, 1500); toast('시작종이 울렸어요!'); } };
   const HUNT_END = { phase: 'bell', name: '종료령', msg: '종료령이 울린 뒤에도 계속 답안지를 작성하는 행위', wrong: '앗! 필기구를 내려놓고 손을 책상 아래로 내린 학생이에요.',
-    intro: '🔔 종료령이 울렸어요! 아직도 답안지를 쓰고 있는 학생 3명을 찾아요.', ring: true,
+    intro: '종료령이 울렸어요! 아직도 답안지를 쓰고 있는 학생 3명을 찾아요.', ring: true,
     bad: () => ['writing look-d face-sly', ''], ok: () => ['arm-down look-c face-smile', ''],
     next() { finishWatch(true); } };
   function hunt(h) {
@@ -411,7 +408,7 @@ const G = (() => {
       if (!u.left.size) { clearTimeout(u.timer); timebar(0); u.timer = later(endHunt, 1200); }
     } else if (!u.bad.includes(i)) {
       K.set(kidEl(i), 'face-sad');
-      popup(i, '💔', 'bad');
+      popup(i, '실수!', 'bad');
       lose(u.h.wrong);
     }
   }
@@ -427,7 +424,7 @@ const G = (() => {
     if (cleared) { K.sfx('win'); SEATS.forEach((_, i) => { kidEl(i).setAttribute('class', 'kid'); K.bubble(kidEl(i), ''); K.set(kidEl(i), 'arm-up face-smile look-c'); }); }
     over(`<h2>${cleared ? '감독 완료! ' + stars(s) : '아쉬워요, 다시 도전!'}</h2>
       <p><b>${st.score}점</b> · 잡은 부정행위 ${st.caught} / ${TOTAL} · 최고 ${st.maxCombo}연속</p>
-      <p class="best">${record ? '🎉 새로운 최고 기록!' : '최고 기록 ' + st.best + '점'}</p>
+      <p class="best">${record ? '새로운 최고 기록!' : '최고 기록 ' + st.best + '점'}</p>
       ${st.log.length ? '<p>다시 확인해요</p>' : '<p>하나도 놓치지 않았어요. 완벽해요!</p>'}${logList(st.log)}
       <div class="btn-row"><button class="btn" onclick="G.start('watch')">다시 하기</button>
       <a class="btn btn--ghost" href="#game-desk">1단계: 책상 점검</a><a class="btn btn--ghost" href="#quiz">퀴즈 풀기</a><a class="btn btn--ghost" href="#home">처음으로</a></div>`);

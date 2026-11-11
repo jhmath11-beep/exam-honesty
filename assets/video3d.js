@@ -11,7 +11,33 @@ const V = (() => {
   const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
   const easeOut = u => 1 - (1 - u) ** 3;
   const easeBack = u => { const c = 1.9; return 1 + (c + 1) * (u - 1) ** 3 + c * (u - 1) ** 2; };
-  const FONT = 'Pretendard, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif';
+  const FONT = '"IBM Plex Sans KR","Malgun Gothic",sans-serif', TFONT = 'Hahmlet, serif';
+  const NAVY = '#1f2a44', LINE = '#2a2522', PAPER = '#fffdf7', RED = '#d6322b';
+  // 칠판 카드·말풍선에 쓰는 아이콘(이모지 대신 직접 그림). 좌표는 K.prop 과 같은 -75~75
+  const O = `stroke="${LINE}" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"`;
+  const SPARK = `<path d="M0-62Q9-9 62 0Q9 9 0 62Q-9 9-62 0Q-9-9 0-62Z" fill="#f2b42c" ${O}/>`;
+  const ICON = {
+    '❌': [-44, 0, 44].map((x, i) => `<ellipse cx="${x}" cy="0" rx="17" ry="25" fill="${i === 1 ? '#16161a' : PAPER}" stroke="${RED}" stroke-width="4"/>`).join('') +
+      `<path d="M-32-36L32 36M32-36L-32 36" stroke="#2b4fa8" stroke-width="9" stroke-linecap="round"/>`,
+    '👀': [-27, 27].map(x => `<ellipse cx="${x}" cy="0" rx="25" ry="32" fill="${PAPER}" ${O}/><ellipse cx="${x + 10}" cy="6" rx="11" ry="14" fill="${NAVY}"/><circle cx="${x + 14}" cy="0" r="4" fill="#fff"/>`).join(''),
+    '👉': `<rect x="-72" y="-20" width="26" height="50" rx="3" fill="#2c3a5c" ${O}/><rect x="-6" y="-22" width="58" height="18" rx="9" fill="#f6d2b4" ${O}/>
+      <rect x="-50" y="-22" width="52" height="52" rx="14" fill="#f6d2b4" ${O}/><path d="M-34-4H-8M-34 10H-8" stroke="${LINE}" stroke-width="3" stroke-linecap="round"/>
+      <path d="M62-34Q74-13 62 8M70-48Q92-13 70 22" fill="none" stroke="${RED}" stroke-width="5" stroke-linecap="round"/>`,
+    '✋': `${[-34, -16, 2, 20].map((x, i) => `<rect x="${x}" y="${-62 + Math.abs(i - 1.5) * 6}" width="15" height="62" rx="7" fill="#f6d2b4" ${O}/>`).join('')}
+      <rect x="-54" y="-4" width="34" height="15" rx="7" fill="#f6d2b4" ${O} transform="rotate(-35 -36 4)"/>
+      <rect x="-36" y="-14" width="72" height="72" rx="18" fill="#f6d2b4" ${O}/><path d="M-20 6H18M-20 22H10M-20 38H16" stroke="#2b4fa8" stroke-width="4" stroke-linecap="round"/>`,
+    '😠': `<circle cx="-6" cy="6" r="48" fill="#f6d2b4" ${O}/><path d="M-36-14L-14-4M24-14L2-4" stroke="${LINE}" stroke-width="6" stroke-linecap="round"/>
+      <ellipse cx="-24" cy="8" rx="5" ry="7" fill="${NAVY}"/><ellipse cx="12" cy="8" rx="5" ry="7" fill="${NAVY}"/><path d="M-24 36Q-6 24 12 36" fill="none" stroke="${LINE}" stroke-width="5" stroke-linecap="round"/>
+      <path d="M44-60Q44-44 60-44M72-60Q72-44 56-44M44-28Q44-40 60-40M72-28Q72-40 56-40" fill="none" stroke="${RED}" stroke-width="6" stroke-linecap="round"/>`,
+    '🔄': `<path d="M-48-20H34M18-38L42-20 18-2" fill="none" stroke="${NAVY}" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M48 22H-34M-18 4L-42 22-18 40" fill="none" stroke="${RED}" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>`,
+    '🧑‍🏫': `<path d="M42 44L66-44" stroke="#8a6a48" stroke-width="6" stroke-linecap="round"/><path d="M-46 70Q-46 16 0 12Q46 16 46 70Z" fill="#3a3f4b" ${O}/>
+      <path d="M-13 14L0 40 13 14Z" fill="${PAPER}" ${O}/><circle cy="-24" r="31" fill="#f6d2b4" ${O}/><path d="M-31-26Q-31-58 0-58Q31-58 31-26Q14-44-31-26Z" fill="#2e2420" ${O}/>
+      <g fill="none" stroke="${NAVY}" stroke-width="3.5"><circle cx="-12" cy="-20" r="8"/><circle cx="12" cy="-20" r="8"/><path d="M-4-20H4M-6-3Q0 1 6-3"/></g>`,
+    '✨': SPARK, '⭐': SPARK,
+    '🚽': `<rect x="-44" y="-52" width="88" height="104" rx="4" fill="#8fa3b5" ${O}/><text y="2" font-size="42" font-weight="900" text-anchor="middle" dominant-baseline="central" fill="${PAPER}" font-family="sans-serif">WC</text>`,
+    '💢': `<path d="M-14-46Q-14-14-46-14M14-46Q14-14 46-14M-14 46Q-14 14-46 14M14 46Q14 14 46 14" fill="none" stroke="${RED}" stroke-width="12" stroke-linecap="round"/>`,
+  };
 
   let renderer, scene, camera, canvas, audio, ui, raf = 0, stage, objs = {}, titleObj;
   let sceneIdx = -1, cueIdx = -1, lastT = 0, timeline = [], tlPos = 0, clock = 0, prevNow = 0, amp = 0, failed = false;
@@ -46,7 +72,7 @@ const V = (() => {
     if (!e.ok && redraw) e.cbs.push(redraw);
     return e.ok ? e.img : null;
   }
-  const propImg = (k, redraw) => svgImg('p:' + k, K.prop(k), '-75 -75 150 150', redraw);
+  const propImg = (k, redraw) => svgImg('p:' + k, ICON[k] || K.prop(k), '-75 -75 150 150', redraw);
   const markImg = (m, redraw) => svgImg('m:' + m, K.mark(m), '-50 -50 100 100', redraw);
 
   function canvasTex(w, h, draw) {
@@ -69,23 +95,28 @@ const V = (() => {
     const w = Math.ceil([...str].length * size * 1.08 + size * 1.4), h = Math.ceil(size * 1.8);
     const tex = canvasTex(w * 2, h * 2, ctx => {
       ctx.scale(2, 2);
-      if (sticker) { ctx.fillStyle = sticker; rr(ctx, 2, 2, w - 4, h - 4, size * .5); ctx.fill(); }
-      ctx.font = `900 ${size}px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = fill;
+      if (sticker) { ctx.fillStyle = sticker; rr(ctx, 2, 2, w - 4, h - 4, 4); ctx.fill(); ctx.strokeStyle = LINE; ctx.lineWidth = 2; ctx.stroke(); }
+      ctx.font = `900 ${size}px ${TFONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = fill;
       ctx.fillText(str, w / 2, h / 2 + size * .04);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
     });
     return { tex, w, h };
   };
-  // 칠판 카드: 넓으면 그림 왼쪽+글 오른쪽, 좁으면 그림 위+글 아래
+  // 칠판 카드(잘라 붙인 시험지 조각 + 빨간 자석): 넓으면 그림 왼쪽+글 오른쪽, 좁으면 그림 위+글 아래
   function cardTex(w, h, k, label, fs) {
     const lines = label.split('\n'), wide = w >= 260;
     return canvasTex(w * 2, h * 2, (ctx, redraw) => {
       ctx.scale(2, 2);
-      ctx.fillStyle = '#fffdf5'; rr(ctx, 1, 1, w - 2, h - 2, 20); ctx.fill();
-      ctx.strokeStyle = 'rgba(0,0,0,.14)'; ctx.lineWidth = 2; ctx.stroke();
-      const im = propImg(k, redraw), is = wide ? h * .9 : h * .56;
-      if (im) ctx.drawImage(im, wide ? h * .45 - is / 2 : w / 2 - is / 2, wide ? h / 2 - is / 2 : h * .06, is, is);
-      ctx.font = `700 ${fs}px ${FONT}`; ctx.fillStyle = INK; ctx.textBaseline = 'middle'; ctx.textAlign = wide ? 'left' : 'center';
+      ctx.fillStyle = PAPER; rr(ctx, 1, 1, w - 2, h - 2, 4); ctx.fill();
+      ctx.strokeStyle = 'rgba(42,37,34,.85)'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = '#cfc5ad'; ctx.fillRect(h * .12, h * (wide ? .88 : .95), w - h * .24, 1);   // 괘선
+      const im = propImg(k, redraw), is = wide ? h * .8 : h * .52;
+      if (im) ctx.drawImage(im, wide ? h * .47 - is / 2 : w / 2 - is / 2, wide ? h / 2 - is / 2 : h * .08, is, is);
+      const mr = h * .07, mx = h * .13, my = h * .13;   // 자석
+      ctx.fillStyle = 'rgba(42,37,34,.25)'; ctx.beginPath(); ctx.arc(mx + 1.5, my + 2, mr, 0, 7); ctx.fill();
+      ctx.fillStyle = RED; ctx.beginPath(); ctx.arc(mx, my, mr, 0, 7); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.beginPath(); ctx.ellipse(mx - mr * .3, my - mr * .38, mr * .38, mr * .22, -.5, 0, 7); ctx.fill();
+      ctx.font = `800 ${fs}px ${TFONT}`; ctx.fillStyle = NAVY; ctx.textBaseline = 'middle'; ctx.textAlign = wide ? 'left' : 'center';
       lines.forEach((l, i) => wide
         ? ctx.fillText(l, h * .88, h / 2 + (i - (lines.length - 1) / 2) * fs * 1.25)
         : ctx.fillText(l, w / 2, h * .66 + (i + (2 - lines.length) / 2) * fs * 1.2 + fs * .1));
@@ -139,7 +170,7 @@ const V = (() => {
       list.forEach(([k, label, m], i) => {
         const [cx, cy, w, h] = K.cell(i, cols, box);
         const node = plane(cardTex(Math.round(w), Math.round(h), k, label, fs || (w >= 260 ? Math.min(30, h * .24) : 23)), w * PX, h * PX);
-        node.position.copy(b2w(cx, cy, .025 + i * .0004));
+        node.position.copy(b2w(cx, cy, .025 + i * .0004)); node.rotation.z = ((i * 37) % 7 - 3) * .004;   // 손으로 붙인 듯 살짝 기울임
         const o = reg('t' + i, node, { vis: false });
         if (m) {
           o.mark = plane(canvasTex(128, 128, (ctx, rd) => { const im = markImg(m, rd); if (im) ctx.drawImage(im, 0, 0, 128, 128); }), 54 * PX, 54 * PX);
@@ -178,8 +209,8 @@ const V = (() => {
   /* ───────── 3D 소품 ───────── */
   function phoneModel() {
     const g = new T.Group();
-    add(g, box(.085, .16, .014), '#1f2937');
-    add(g, box(.072, .135, .004), '#7dd3fc', [0, 0, .009], { mat: { emissive: '#38bdf8', emissiveIntensity: .5 }, cast: false });
+    add(g, box(.085, .16, .014), '#3a3f4b', null, { mat: { roughness: .4 } });
+    add(g, box(.072, .135, .004), '#9fc6c9', [0, 0, .009], { mat: { emissive: '#9fc6c9', emissiveIntensity: .45, roughness: .2 }, cast: false });
     return g;
   }
   function basketModel() {
@@ -188,7 +219,7 @@ const V = (() => {
     add(g, cyl(.19, .19, .02), '#a9713a', [0, .01, 0]);
     add(g, new T.TorusGeometry(.26, .022, 10, 28), '#a9713a', [0, .26, 0], { rot: [Math.PI / 2, 0, 0] });
     add(g, new T.TorusGeometry(.24, .016, 8, 24, Math.PI), '#a9713a', [0, .26, 0]);
-    const { tex, w, h } = textTex('제출함', 60, '#991b1b', '#fff');
+    const { tex, w, h } = textTex('제출함', 60, RED, PAPER);
     const sign = plane(tex, w * .002, h * .002);
     sign.position.set(0, .62, 0); sign.rotation.y = Math.PI;
     g.add(sign);
@@ -196,13 +227,13 @@ const V = (() => {
   }
   function bagModel() {
     const g = new T.Group();
-    add(g, cap(.2, .2), '#ec4899', [0, .3, 0], { scale: [1.15, 1, .72] });
-    add(g, box(.3, .17, .08), '#db2777', [0, .19, -.13]);
-    add(g, box(.22, .03, .02), '#fbbf24', [0, .42, -.145]);
-    add(g, new T.TorusGeometry(.07, .018, 8, 18, Math.PI), '#be185d', [0, .58, 0]);
+    add(g, cap(.2, .2), '#34507a', [0, .3, 0], { scale: [1.15, 1, .72] });
+    add(g, box(.3, .17, .08), '#2a4266', [0, .19, -.13]);
+    add(g, box(.22, .03, .02), '#b9bcc2', [0, .42, -.145], { mat: { metalness: .5, roughness: .4 } });
+    add(g, new T.TorusGeometry(.07, .018, 8, 18, Math.PI), '#2a2f3a', [0, .58, 0]);
     return g;
   }
-  const bookModel = c => { const g = new T.Group(); add(g, box(.2, .04, .27), c); add(g, box(.19, .03, .26), '#f8fafc', [.008, 0, 0]); return g; };
+  const bookModel = c => { const g = new T.Group(); add(g, box(.2, .04, .27), c); add(g, box(.19, .03, .26), PAPER, [.008, 0, 0]); return g; };
   function bellModel() {
     const g = new T.Group(), pts = [[.0, .0], [.06, -.02], [.1, -.1], [.12, -.2], [.17, -.27], [.2, -.3]].map(p => new T.Vector2(...p));
     add(g, new T.LatheGeometry(pts, 24), '#f5b301', null, { mat: { metalness: .4, roughness: .35, side: T.DoubleSide } });
@@ -257,7 +288,7 @@ const V = (() => {
       add(p, sph(.008 * s, 8, 8), '#ffffff', [.008 * s, .01 * s, .01 * s], { cast: false });
       rig.eyes.push(e); rig.pupils.push(p);
       rig.brows.push(add(head, box(.075 * s, .014 * s, .012), INK, [sx * .085 * s, y + .07 * s, z + .008], { cast: false }));
-      const ch = add(head, new T.CircleGeometry(.036 * s, 20), new T.MeshBasicMaterial({ color: '#fb7185', transparent: true, opacity: .42 }),
+      const ch = add(head, new T.CircleGeometry(.036 * s, 20), new T.MeshBasicMaterial({ color: '#e0707a', transparent: true, opacity: .25 }),
         [sx * .155 * s, y - .075 * s, flat ? z + .003 : z - .028 * s], { rot: [0, flat ? 0 : sx * .6, 0], cast: false });
       ch.renderOrder = 2;
     }
@@ -275,12 +306,14 @@ const V = (() => {
   }
   function bubbleNode() {
     const st = { text: '' };
-    const tex = canvasTex(256, 224, ctx => {
-      ctx.fillStyle = '#fff'; ctx.strokeStyle = INK; ctx.lineWidth = 7;
-      rr(ctx, 8, 8, 240, 160, 30); ctx.fill(); ctx.stroke();
+    const tex = canvasTex(256, 224, (ctx, rd) => {
+      ctx.fillStyle = PAPER; ctx.strokeStyle = LINE; ctx.lineWidth = 6;
+      rr(ctx, 8, 8, 240, 160, 14); ctx.fill(); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(70, 164); ctx.lineTo(48, 214); ctx.lineTo(116, 164); ctx.closePath(); ctx.fill();
       ctx.beginPath(); ctx.moveTo(70, 166); ctx.lineTo(48, 214); ctx.lineTo(116, 166); ctx.stroke();
-      ctx.font = `700 ${[...st.text].length > 2 ? 48 : 96}px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = INK;
+      const ic = ICON[st.text], im = ic && svgImg('i:' + st.text, ic, '-75 -75 150 150', rd);
+      if (ic) { if (im) ctx.drawImage(im, 68, 32, 120, 120); return; }
+      ctx.font = `700 ${[...st.text].length > 2 ? 48 : 96}px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = NAVY;
       ctx.fillText(st.text, 128, 92);
     });
     const n = plane(tex, .46, .4);
@@ -288,48 +321,54 @@ const V = (() => {
     n.userData = { st, tex };
     return n;
   }
-  function makeKid({ hair, shirt, style = 'short', nb = 0, seed = 0 }) {
+  function makeKid({ hair, shirt, style = 'short', nb = 0, seed = 0, skin = SKIN, tie = true }) {
     const rig = { kind: 'kid', tok: TOK, nb, seed, cur: { ...P0 }, vel: {}, tgt: { ...P0 }, flags: new Set(), blinkAt: 1 + seed, root: new T.Group() };
-    const root = rig.root, chair = '#8b9bb4', metal = '#9ca3af';
-    add(root, box(.42, .04, .42), chair, [0, .44, -.03], { receive: true });
-    add(root, box(.42, .36, .04), chair, [0, .74, -.25]);
-    for (const [x, z] of [[-.19, -.22], [.19, -.22], [-.19, .16], [.19, .16]]) add(root, cyl(.015, .015, .44, 8), metal, [x, .22, z]);
+    const root = rig.root, wood = '#b07f53', metal = '#6b6f78', mo = { metalness: .35, roughness: .5 };
+    const sk = { roughness: .7 }, hm = { roughness: .55, side: T.DoubleSide }, cloth = { roughness: .9 };
+    add(root, box(.42, .04, .42), wood, [0, .44, -.03], { receive: true });
+    add(root, box(.42, .3, .03), wood, [0, .76, -.25]);
+    for (const [x, z] of [[-.19, -.22], [.19, -.22], [-.19, .16], [.19, .16]]) add(root, cyl(.015, .015, .44, 8), metal, [x, .22, z], { mat: mo });
+    for (const sx of [-.19, .19]) add(root, cyl(.013, .013, .36, 8), metal, [sx, .66, -.24], { mat: mo });
     for (const sx of [1, -1]) {   // 다리
-      add(root, cap(.072, .2), '#475569', [sx * .1, .5, .16], { rot: [Math.PI / 2, 0, 0] });
-      add(root, cap(.058, .26), '#475569', [sx * .1, .3, .33]);
-      add(root, sph(.075), '#f8fafc', [sx * .1, .06, .38], { scale: [1, .7, 1.5] });
+      add(root, cap(.072, .2), '#2a2f3a', [sx * .1, .5, .16], { rot: [Math.PI / 2, 0, 0], mat: cloth });
+      add(root, cap(.058, .26), '#2a2f3a', [sx * .1, .3, .33], { mat: cloth });
+      add(root, sph(.075), '#3a3f4b', [sx * .1, .06, .38], { scale: [1, .7, 1.5], mat: { roughness: .5 } });
     }
     // 책상(학생 앞쪽 = +z)
     const desk = rig.desk = grp(root, [0, 0, .52]);
-    add(desk, box(.98, .04, .58), '#edc58c', [0, .74, 0], { receive: true });
-    add(desk, box(.9, .03, .46), '#d19a55', [0, .6, .02]);
-    for (const [x, z] of [[-.44, -.24], [.44, -.24], [-.44, .24], [.44, .24]]) add(desk, cyl(.017, .017, .74, 8), metal, [x, .37, z]);
-    rig.paper = add(desk, box(.24, .004, .32), '#ffffff', [0, .764, -.04], { receive: true });
-    // 몸
+    add(desk, box(.98, .04, .58), '#d7a86e', [0, .74, 0], { receive: true, mat: { roughness: .6 } });
+    add(desk, box(1, .012, .6), '#a8733f', [0, .717, 0]);
+    add(desk, box(.9, .03, .46), '#a8733f', [0, .6, .02]);
+    for (const [x, z] of [[-.44, -.24], [.44, -.24], [-.44, .24], [.44, .24]]) add(desk, cyl(.017, .017, .74, 8), metal, [x, .37, z], { mat: mo });
+    rig.paper = add(desk, box(.24, .004, .32), PAPER, [0, .764, -.04], { receive: true });
+    // 몸: 재킷 + 흰 깃 + 넥타이/리본
     const body = rig.body = grp(root, [0, .49, 0]);
-    add(body, cap(.165, .24), shirt, [0, .27, 0], { scale: [1.12, 1, .85] });
-    add(body, new T.TorusGeometry(.075, .024, 8, 20), '#ffffff', [0, .515, .01], { rot: [Math.PI / 2, 0, 0], cast: false });
-    add(body, cyl(.052, .052, .1, 12), SKIN, [0, .55, 0]);
+    add(body, cap(.165, .24), shirt, [0, .27, 0], { scale: [1.12, 1, .85], mat: cloth });
+    add(body, new T.TorusGeometry(.075, .024, 8, 20), PAPER, [0, .515, .01], { rot: [Math.PI / 2, 0, 0], cast: false });
+    add(body, new T.CircleGeometry(.075, 3), PAPER, [0, .45, .142], { rot: [-.25, 0, -Math.PI / 2], scale: [1.25, 1, 1], cast: false });
+    if (tie) add(body, box(.036, .15, .012), '#b8322b', [0, .41, .15], { rot: [-.28, 0, 0], cast: false });
+    else for (const sx of [1, -1]) add(body, box(.06, .03, .014), '#b8322b', [sx * .03, .49, .148], { rot: [-.3, 0, sx * .35], cast: false });
+    add(body, cyl(.052, .052, .1, 12), skin, [0, .55, 0], { mat: sk });
     const head = rig.head = grp(body, [0, .58, 0]);
-    add(head, sph(.25, 32, 24), SKIN, [0, .22, 0], { scale: [1, .96, .95] });
-    for (const sx of [1, -1]) add(head, sph(.045, 12, 10), SKIN, [sx * .243, .2, 0]);
+    add(head, sph(.25, 32, 24), skin, [0, .22, 0], { scale: [1, .96, .95], mat: sk });
+    for (const sx of [1, -1]) add(head, sph(.045, 12, 10), skin, [sx * .243, .2, 0], { mat: sk });
     const cut = new T.SphereGeometry(.264, 32, 20, 0, Math.PI * 2, 0, 1.72);
-    add(head, cut, hair, [0, .225, 0], { rot: [-.52, 0, 0], mat: { side: T.DoubleSide } });
-    add(head, sph(.13, 20, 12), hair, [0, .405, .15], { scale: [1.5, .42, .6] });
-    if (style === 'bob') add(head, new T.SphereGeometry(.275, 32, 20, Math.PI * .9, Math.PI * 1.2, 0, 2.25), hair, [0, .225, 0], { mat: { side: T.DoubleSide } });
-    if (style === 'pony') { add(head, sph(.09), hair, [0, .34, -.27]); add(head, cap(.06, .2), hair, [0, .16, -.33], { rot: [.35, 0, 0] }); }
-    if (style === 'twin') for (const sx of [1, -1]) add(head, sph(.1), hair, [sx * .27, .12, -.04], { scale: [1, 1.2, 1] });
-    if (style === 'curly') [[-.16, .42, 0], [0, .47, .02], [.16, .42, 0], [-.1, .44, -.14], [.1, .44, -.14], [0, .4, .16]].forEach(p => add(head, sph(.1, 16, 12), hair, p));
+    add(head, cut, hair, [0, .225, 0], { rot: [-.52, 0, 0], mat: hm });
+    add(head, sph(.13, 20, 12), hair, [0, .405, .15], { scale: [1.5, .42, .6], mat: hm });
+    if (style === 'bob') add(head, new T.SphereGeometry(.275, 32, 20, Math.PI * .9, Math.PI * 1.2, 0, 2.25), hair, [0, .225, 0], { mat: hm });
+    if (style === 'pony') { add(head, sph(.09), hair, [0, .34, -.27], { mat: hm }); add(head, cap(.06, .2), hair, [0, .16, -.33], { rot: [.35, 0, 0], mat: hm }); }
+    if (style === 'twin') for (const sx of [1, -1]) add(head, sph(.1), hair, [sx * .27, .12, -.04], { scale: [1, 1.2, 1], mat: hm });
+    if (style === 'curly') [[-.16, .42, 0], [0, .47, .02], [.16, .42, 0], [-.1, .44, -.14], [.1, .44, -.14], [0, .4, .16]].forEach(p => add(head, sph(.1, 16, 12), hair, p, { mat: hm }));
     face(head, .235, .222, 1, rig);
-    rig.sweat = add(head, sph(.026, 16, 12), '#38bdf8', [.19, .3, .17], { scale: [.8, 1.35, .7], cast: false });
-    rig.ear = add(head, sph(.035, 12, 10), '#f8fafc', [-.262, .2, .01], { scale: [.7, 1, 1] });
-    rig.arms = { p: arm(body, 1, .45, .2, .052, .22, .24, shirt, SKIN, .055), n: arm(body, -1, .45, .2, .052, .22, .24, shirt, SKIN, .055) };
-    rig.pen = add(rig.arms.n.el, cyl(.009, .009, .16, 8), '#334155', [.02, -.22, .06], { rot: [.9, 0, -.3] });
+    rig.sweat = add(head, sph(.026, 16, 12), '#8fc3e0', [.19, .3, .17], { scale: [.8, 1.35, .7], cast: false, mat: { roughness: .2 } });
+    rig.ear = add(head, sph(.035, 12, 10), PAPER, [-.262, .2, .01], { scale: [.7, 1, 1] });
+    rig.arms = { p: arm(body, 1, .45, .2, .052, .22, .24, shirt, skin, .055), n: arm(body, -1, .45, .2, .052, .22, .24, shirt, skin, .055) };
+    rig.pen = add(rig.arms.n.el, cyl(.009, .009, .16, 8), '#2b4fa8', [.02, -.22, .06], { rot: [.9, 0, -.3] });
     rig.held = phoneModel(); rig.held.position.set(0, -.34, .03); rig.arms.p.el.add(rig.held);
     rig.lap = phoneModel(); rig.lap.position.set(.03, -.3, .05); rig.lap.rotation.set(-1.2, 0, 0); rig.arms.n.el.add(rig.lap);
-    rig.note = add(rig.arms.n.el, box(.11, .14, .004), '#fef08a', [.02, -.31, .05], { rot: [-1.0, 0, 0] });
-    rig.palm = add(rig.arms.n.el, new T.CircleGeometry(.04, 16), new T.MeshBasicMaterial({ color: '#1d4ed8' }), [.0, -.255, .057], { scale: [1, .25, 1], cast: false });
-    rig.watch = add(rig.arms.n.el, cyl(.058, .058, .04, 16), '#0f172a', [0, -.17, 0], { mat: { emissive: '#2dd4bf', emissiveIntensity: .7 } });
+    rig.note = add(rig.arms.n.el, box(.11, .14, .004), '#f3e6b0', [.02, -.31, .05], { rot: [-1.0, 0, 0] });
+    rig.palm = add(rig.arms.n.el, new T.CircleGeometry(.04, 16), new T.MeshBasicMaterial({ color: '#2b4fa8' }), [.0, -.255, .057], { scale: [1, .25, 1], cast: false });
+    rig.watch = add(rig.arms.n.el, cyl(.058, .058, .04, 16), '#3a3f4b', [0, -.17, 0], { mat: { emissive: '#9fc6c9', emissiveIntensity: .6 } });
     rig.bubble = bubbleNode(); rig.bubble.position.set(.44, 1.5, 0); root.add(rig.bubble);
     rig.stamp = plane(canvasTex(128, 128, (ctx, rd) => { const im = markImg('x', rd); if (im) ctx.drawImage(im, 0, 0, 128, 128); }), .26, .26);
     rig.stamp.position.set(-.36, 1.5, .2); rig.stamp.renderOrder = 6; rig.stamp.material.depthTest = false; root.add(rig.stamp);
@@ -338,13 +377,15 @@ const V = (() => {
   function makeMascot() {
     const rig = { kind: 'mascot', tok: TOK_M, nb: 0, seed: 2.2, cur: { ...P0, ...M_REST }, vel: {}, tgt: { ...P0, ...M_REST }, flags: new Set(), blinkAt: 2, root: new T.Group() };
     const root = rig.root, hex = (a, b, h) => { const g = cyl(a, b, h, 6); g.rotateY(Math.PI / 6); return g; };
-    for (const sx of [1, -1]) { add(root, cyl(.018, .018, .16, 8), INK, [sx * .09, .1, 0]); add(root, sph(.07), '#ef4444', [sx * .09, .04, .04], { scale: [1, .6, 1.5] }); }
-    const body = rig.body = grp(root, [0, .16, 0]);
-    add(body, cyl(.2, .19, .12, 24), '#fda4af', [0, .06, 0]);
-    add(body, cyl(.205, .205, .07, 24), '#cbd5e1', [0, .155, 0], { mat: { metalness: .5, roughness: .4 } });
-    add(body, hex(.2, .2, .6), '#fbbf24', [0, .49, 0]);
-    add(body, hex(0, .2, .3), '#fde7c3', [0, .94, 0]);
-    add(body, cyl(0, .068, .102, 6), '#334155', [0, 1.04, 0], { rot: [0, Math.PI / 6, 0] });
+    for (const sx of [1, -1]) { add(root, cyl(.018, .018, .16, 8), NAVY, [sx * .09, .1, 0]); add(root, sph(.07), RED, [sx * .09, .04, .04], { scale: [1, .6, 1.5], mat: { roughness: .5 } }); }
+    const body = rig.body = grp(root, [0, .16, 0]), ferrule = { metalness: .6, roughness: .35 };
+    add(body, cyl(.19, .19, .12, 24), '#e58a8a', [0, .06, 0], { mat: { roughness: .9 } });
+    add(body, cyl(.205, .205, .08, 24), '#c0c4c8', [0, .16, 0], { mat: ferrule });
+    for (const y of [.13, .19]) add(body, cyl(.209, .209, .012, 24), '#a7abb0', [0, y, 0], { mat: ferrule, cast: false });
+    add(body, hex(.2, .2, .6), '#f2b42c', [0, .49, 0], { mat: { roughness: .5, flatShading: true } });
+    add(body, hex(.203, .203, .012), '#d99a1c', [0, .79, 0], { mat: { roughness: .5, flatShading: true }, cast: false });
+    add(body, hex(0, .2, .3), '#e8c9a0', [0, .94, 0], { mat: { roughness: .85, flatShading: true } });
+    add(body, cyl(0, .068, .102, 6), LINE, [0, 1.04, 0], { rot: [0, Math.PI / 6, 0], mat: { roughness: .6, flatShading: true } });
     rig.head = grp(body, [0, .3, 0]);
     face(rig.head, .32, .176, .85, rig, true);
     rig.sweat = new T.Group(); rig.ear = new T.Group();
@@ -421,65 +462,117 @@ const V = (() => {
 
   /* ───────── 교실 ───────── */
   function buildRoom() {
-    const wood = canvasTex(512, 512, ctx => {
-      ctx.fillStyle = '#e3c08f'; ctx.fillRect(0, 0, 512, 512);
-      ctx.strokeStyle = '#cfa874'; ctx.lineWidth = 3;
-      for (let y = 0; y <= 512; y += 64) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(512, y); ctx.stroke(); }
-      for (let i = 0; i < 16; i++) { const y = (i % 8) * 64, x = (i * 173) % 512; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + 64); ctx.stroke(); }
+    let seed = 7;
+    const rnd = () => (seed = seed * 16807 % 2147483647) / 2147483647;   // 고정 시드: 매번 같은 무늬
+    const shade = (hex, k) => '#' + [1, 3, 5].map(i => Math.round(clamp(parseInt(hex.slice(i, i + 2), 16) * k, 0, 255)).toString(16).padStart(2, '0')).join('');
+    // 바닥: 판재(판마다 밝기 ±6%, 틈 2px)
+    const wood = canvasTex(1024, 1024, ctx => {
+      ctx.fillStyle = '#8c6440'; ctx.fillRect(0, 0, 1024, 1024);
+      for (let c = 0; c < 8; c++) {
+        let y = rnd() * 1024;
+        const end = y + 1024;
+        while (y < end) {
+          const len = 300 + rnd() * 400, col = shade('#c39062', .94 + rnd() * .12);
+          for (const yy of [y, y - 1024]) {
+            ctx.fillStyle = col; ctx.fillRect(c * 128 + 1, yy + 1, 126, Math.min(len, end - y) - 2);
+            ctx.globalAlpha = .07; ctx.fillStyle = '#5a3d22';
+            for (let g = 0; g < 4; g++) ctx.fillRect(c * 128 + 10 + ((g * 31 + c * 17) % 100), yy + 6, 1.5, Math.min(len, end - y) - 12);
+            ctx.globalAlpha = 1;
+          }
+          y += len;
+        }
+      }
     });
-    wood.wrapS = wood.wrapT = T.RepeatWrapping; wood.repeat.set(5, 5);
-    add(scene, new T.PlaneGeometry(10, 9), new T.MeshStandardMaterial({ map: wood, roughness: .9 }), [.5, 0, 0], { rot: [-Math.PI / 2, 0, 0], receive: true, cast: false });
-    const wall = '#fdf3dc';
+    wood.wrapS = wood.wrapT = T.RepeatWrapping; wood.repeat.set(5, 4.5);
+    add(scene, new T.PlaneGeometry(10, 9), new T.MeshStandardMaterial({ map: wood, roughness: .7 }), [.5, 0, 0], { rot: [-Math.PI / 2, 0, 0], receive: true, cast: false });
+    // 벽: 위는 크림, 아래 0~0.9m 패널 + 몰딩
+    const wall = '#ece4d3', side = '#e3d8c2', panel = '#c9b79a', mold = '#8a6a48';
     add(scene, new T.PlaneGeometry(10, 3.6), wall, [.5, 1.8, -4], { receive: true, cast: false });
     add(scene, new T.PlaneGeometry(10, 3.6), wall, [.5, 1.8, 4.4], { rot: [0, Math.PI, 0], receive: true, cast: false });
-    add(scene, new T.PlaneGeometry(9, 3.6), '#f8ecd0', [-4.4, 1.8, 0], { rot: [0, Math.PI / 2, 0], receive: true, cast: false });
-    add(scene, new T.PlaneGeometry(9, 3.6), '#f8ecd0', [5.4, 1.8, 0], { rot: [0, -Math.PI / 2, 0], receive: true, cast: false });
-    add(scene, box(10, .12, .04), '#c9a36b', [.5, .06, -3.98]); add(scene, box(10, .12, .04), '#c9a36b', [.5, .06, 4.38]);
-    for (const z of [-2.2, .2, 2.6]) {   // 창문
-      add(scene, box(.06, 1.5, 1.7), '#ffffff', [-4.38, 1.85, z]);
-      add(scene, box(.02, 1.36, 1.56), '#bae6fd', [-4.34, 1.85, z], { mat: { emissive: '#bae6fd', emissiveIntensity: .55 }, cast: false });
-      add(scene, box(.03, 1.36, .04), '#ffffff', [-4.33, 1.85, z]); add(scene, box(.03, .04, 1.56), '#ffffff', [-4.33, 1.85, z]);
+    add(scene, new T.PlaneGeometry(9, 3.6), side, [-4.4, 1.8, 0], { rot: [0, Math.PI / 2, 0], receive: true, cast: false });
+    add(scene, new T.PlaneGeometry(9, 3.6), side, [5.4, 1.8, 0], { rot: [0, -Math.PI / 2, 0], receive: true, cast: false });
+    for (const [x, z, w, d] of [[.5, -3.985, 10, .03], [.5, 4.385, 10, .03], [-4.385, .2, .03, 8.4], [5.385, .2, .03, 8.4]]) {
+      add(scene, box(w, .9, d), panel, [x, .45, z], { receive: true, cast: false });
+      add(scene, box(w + (d > w ? .02 : 0), .05, d + .03), mold, [x, .9, z], { cast: false });
+      add(scene, box(w, .1, d + .02), mold, [x, .05, z], { cast: false });
     }
-    // 칠판
-    add(scene, box(BOARD.w + .2, 1.623 + .2, .06), '#a16207', [BOARD.x, BOARD.y, BOARD.z - .04]);
-    add(scene, new T.PlaneGeometry(BOARD.w, 1.623), '#2f6b55', [BOARD.x, BOARD.y, BOARD.z], { receive: true, cast: false, mat: { roughness: .95 } });
-    add(scene, box(BOARD.w + .2, .05, .14), '#854d0e', [BOARD.x, BOARD.y - .88, BOARD.z + .04]);
-    add(scene, box(.18, .035, .04), '#ffffff', [2.3, BOARD.y - .84, BOARD.z + .07]); add(scene, box(.12, .035, .04), '#fecaca', [2.6, BOARD.y - .84, BOARD.z + .07]);
+    // 창문 + 빛줄기
+    const ray = canvasTex(4, 128, ctx => { const g = ctx.createLinearGradient(0, 0, 0, 128); g.addColorStop(0, '#fff'); g.addColorStop(1, 'rgba(255,255,255,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, 4, 128); });
+    const rayMat = new T.MeshBasicMaterial({ color: '#fff6dc', map: ray, transparent: true, opacity: .08, blending: T.AdditiveBlending, depthWrite: false, side: T.DoubleSide });
+    for (const z of [-2.2, .2, 2.6]) {
+      add(scene, box(.06, 1.5, 1.7), '#f7f3ea', [-4.38, 1.85, z]);
+      add(scene, box(.02, 1.36, 1.56), '#cfe3e6', [-4.34, 1.85, z], { mat: { emissive: '#cfe3e6', emissiveIntensity: .6, roughness: .2 }, cast: false });
+      add(scene, box(.03, 1.36, .05), '#f7f3ea', [-4.33, 1.85, z]); add(scene, box(.03, .05, 1.56), '#f7f3ea', [-4.33, 1.85, z]);
+      add(scene, box(.16, .04, 1.78), '#f7f3ea', [-4.32, 1.08, z], { receive: true });
+      const g = new T.BufferGeometry(), y0 = 2.45, dx = y0 * .9, dz = -y0 * .4;   // 해 방향(4.5,-5,-2)을 따라 바닥까지
+      g.setAttribute('position', new T.Float32BufferAttribute([-4.32, y0, z - .75, -4.32, y0, z + .75, -4.32 + dx, .02, z + .75 + dz, -4.32 + dx, .02, z - .75 + dz], 3));
+      g.setAttribute('uv', new T.Float32BufferAttribute([0, 1, 1, 1, 1, 0, 0, 0], 2)); g.setIndex([0, 2, 1, 0, 3, 2]);
+      const m = new T.Mesh(g, rayMat); m.renderOrder = 3; scene.add(m);
+    }
+    add(scene, box(.12, .5, 1.3), '#d9d4c8', [-4.3, .5, .2], { mat: { metalness: .2, roughness: .5 } });   // 라디에이터
+    // 칠판: 짙은 녹색 + 분필 얼룩, 알루미늄 틀
+    const chalk = canvasTex(1024, 346, ctx => {
+      ctx.fillStyle = '#24463b'; ctx.fillRect(0, 0, 1024, 346);
+      for (let i = 0; i < 8; i++) {
+        const x = rnd() * 1024, y = rnd() * 346, r = 80 + rnd() * 160, g = ctx.createRadialGradient(x, y, 0, x, y, r);
+        g.addColorStop(0, 'rgba(255,255,255,.04)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2);
+      }
+    });
+    add(scene, new T.PlaneGeometry(BOARD.w, 1.623), new T.MeshStandardMaterial({ map: chalk, roughness: 1 }), [BOARD.x, BOARD.y, BOARD.z], { receive: true, cast: false });
+    const al = { metalness: .4, roughness: .45 }, fw = .07, bh = 1.623;
+    add(scene, box(BOARD.w + .02, bh + .02, .03), '#3a3f4b', [BOARD.x, BOARD.y, BOARD.z - .02], { cast: false });
+    for (const sy of [1, -1]) add(scene, box(BOARD.w + fw * 2, fw, .05), '#b8bcc0', [BOARD.x, BOARD.y + sy * (bh + fw) / 2, BOARD.z + .005], { mat: al });
+    for (const sx of [1, -1]) add(scene, box(fw, bh, .05), '#b8bcc0', [BOARD.x + sx * (BOARD.w + fw) / 2, BOARD.y, BOARD.z + .005], { mat: al });
+    add(scene, box(BOARD.w + .1, .03, .13), '#b8bcc0', [BOARD.x, BOARD.y - bh / 2 - .08, BOARD.z + .06], { mat: al });
+    add(scene, box(BOARD.w + .1, .05, .015), '#a7abb0', [BOARD.x, BOARD.y - bh / 2 - .06, BOARD.z + .12], { mat: al });
+    add(scene, cyl(.012, .012, .16, 8), '#f4f1e8', [2.3, BOARD.y - bh / 2 - .05, BOARD.z + .07], { rot: [0, 0, Math.PI / 2] });
+    add(scene, cyl(.012, .012, .1, 8), '#f2d27a', [2.6, BOARD.y - bh / 2 - .05, BOARD.z + .07], { rot: [0, 0, Math.PI / 2] });
     const clockFace = (x, y, z, ry) => {
       const g = grp(scene, [x, y, z]); g.rotation.y = ry;
-      add(g, cyl(.2, .2, .04, 32), '#475569', null, { rot: [Math.PI / 2, 0, 0] });
-      add(g, cyl(.17, .17, .045, 32), '#ffffff', null, { rot: [Math.PI / 2, 0, 0] });
-      add(g, box(.02, .12, .01), INK, [0, .06, .03]); add(g, box(.1, .02, .01), INK, [.05, 0, .03]);
+      add(g, cyl(.2, .2, .04, 32), '#3a3f4b', null, { rot: [Math.PI / 2, 0, 0] });
+      add(g, cyl(.17, .17, .045, 32), PAPER, null, { rot: [Math.PI / 2, 0, 0] });
+      add(g, box(.02, .12, .01), NAVY, [0, .06, .03]); add(g, box(.1, .02, .01), NAVY, [.05, 0, .03]);
     };
     clockFace(3.75, 2.75, -3.96, 0); clockFace(.5, 3.0, 4.36, Math.PI);
     // 교탁
-    add(scene, box(1.1, .9, .55), '#b9813f', [3.9, .45, -3.0]); add(scene, box(1.2, .05, .65), '#d19a55', [3.9, .92, -3.0], { receive: true });
+    add(scene, box(1.1, .9, .55), '#a8733f', [3.9, .45, -3.0]); add(scene, box(1.2, .05, .65), '#d7a86e', [3.9, .92, -3.0], { receive: true, mat: { roughness: .6 } });
     // 뒤쪽 벽: 사물함·게시판
     for (let c = 0; c < 6; c++) for (let r = 0; r < 2; r++) {
-      add(scene, box(.52, .56, .4), '#93c5fd', [1.6 + c * .55, .3 + r * .59, 4.15], { receive: true });
-      add(scene, sph(.025, 8, 8), '#1e3a8a', [1.42 + c * .55, .3 + r * .59, 3.94]);
+      add(scene, box(.52, .56, .4), '#8fa3b5', [1.6 + c * .55, .3 + r * .59, 4.15], { receive: true, mat: { metalness: .15, roughness: .6 } });
+      add(scene, box(.16, .025, .02), '#6e8295', [1.6 + c * .55, .44 + r * .59, 3.945], { mat: { metalness: .3, roughness: .5 } });
     }
     const bb = canvasTex(1024, 400, ctx => {
-      ctx.fillStyle = '#a16207'; ctx.fillRect(0, 0, 1024, 400); ctx.fillStyle = '#d9f99d'; ctx.fillRect(22, 22, 980, 356);
-      ctx.font = `800 58px ${FONT}`; ctx.fillStyle = '#3f6212'; ctx.textAlign = 'center'; ctx.fillText('우리 반 게시판', 512, 96);
-      ['#fef08a', '#bae6fd', '#fecdd3', '#ddd6fe'].forEach((c, i) => { ctx.save(); ctx.translate(150 + i * 240, 240); ctx.rotate([-.05, .04, -.03, .05][i]); ctx.fillStyle = c; ctx.fillRect(-90, -85, 180, 170); ctx.restore(); });
+      ctx.fillStyle = mold; ctx.fillRect(0, 0, 1024, 400); ctx.fillStyle = '#b88b5c'; ctx.fillRect(22, 22, 980, 356);
+      for (let i = 0; i < 1400; i++) { ctx.fillStyle = rnd() < .5 ? 'rgba(90,60,30,.18)' : 'rgba(255,235,200,.14)'; ctx.fillRect(22 + rnd() * 978, 22 + rnd() * 354, 2, 2); }
+      ctx.font = `800 56px ${TFONT}`; ctx.fillStyle = NAVY; ctx.textAlign = 'center'; ctx.fillText('우리 반 게시판', 512, 92);
+      [0, 1, 2, 3].forEach(i => {
+        ctx.save(); ctx.translate(150 + i * 240, 245); ctx.rotate([-.05, .04, -.03, .05][i]);
+        ctx.fillStyle = 'rgba(42,37,34,.2)'; ctx.fillRect(-84, -76, 176, 168);
+        ctx.fillStyle = PAPER; ctx.fillRect(-90, -82, 176, 168);
+        ctx.fillStyle = NAVY; ctx.fillRect(-66, -40, 110, 7); ctx.fillStyle = '#4e5770'; [0, 1, 2].forEach(l => ctx.fillRect(-66, -8 + l * 28, [128, 104, 120][(l + i) % 3], 4));
+        ctx.fillStyle = RED; ctx.beginPath(); ctx.arc(-2, -66, 11, 0, 7); ctx.fill();
+        ctx.restore();
+      });
     });
     const bbm = add(scene, new T.PlaneGeometry(2.6, 1.02), new T.MeshStandardMaterial({ map: bb, roughness: .9 }), [-1.6, 1.9, 4.38], { rot: [0, Math.PI, 0], cast: false });
     bbm.receiveShadow = true;
-    scene.add(new T.HemisphereLight('#ffffff', '#e8caa0', .72));
-    const sun = new T.DirectionalLight('#fff3dc', .95);
-    sun.position.set(-4, 6, 1.5); sun.target.position.set(.5, .5, -.5); scene.add(sun.target);
-    sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -.0004; sun.shadow.radius = 5;
+    // 조명: 하늘/땅 + 창문 쪽 주광(그림자) + 칠판 쪽 보조광
+    scene.add(new T.HemisphereLight('#fff4e4', '#7d6146', .5));
+    const sun = new T.DirectionalLight('#ffe6bf', 1.4);
+    sun.position.set(-4, 5.5, 1.5); sun.target.position.set(.5, .5, -.5); scene.add(sun.target);
+    const low = (navigator.hardwareConcurrency || 8) <= 4 || Math.min(screen.width, screen.height) < 820;
+    sun.castShadow = true; sun.shadow.mapSize.setScalar(low ? 1024 : 2048); sun.shadow.bias = -.0004; sun.shadow.radius = 4;
     Object.assign(sun.shadow.camera, { left: -6, right: 6, top: 6, bottom: -6, near: 1, far: 16 });
     scene.add(sun);
-    const fill = new T.DirectionalLight('#ffffff', .28); fill.position.set(2, 3, -6); scene.add(fill);   // 칠판 쪽에서 학생 얼굴을 비춘다
+    const fill = new T.DirectionalLight('#d6e4ff', .3); fill.position.set(2, 3, -6); scene.add(fill);   // 칠판 쪽에서 학생 얼굴을 비춘다
   }
   function buildCast() {
     const kid = (id, o, x, z) => { const r = makeKid(o); r.root.position.set(x, 0, z); r.root.rotation.y = Math.PI; r.baseY = 0; scene.add(r.root); return r; };
-    chars.jun = kid('jun', { hair: '#2b211b', shirt: '#60a5fa', style: 'short', nb: -1, seed: .3 }, -.4, 0);
-    chars.sol = kid('sol', { hair: '#5b3a29', shirt: '#f472b6', style: 'bob', nb: 1, seed: 1.9 }, 1.4, 0);
-    [['#1f2937', '#34d399', 'curly', -1.35], ['#7c4a1e', '#fbbf24', 'pony', .5], ['#4a3325', '#fb923c', 'twin', 2.35]].forEach(([hair, shirt, style, x], i) =>
-      bgKids.push(kid('bg' + i, { hair, shirt, style, nb: i ? -1 : 1, seed: 3 + i * 1.3 }, x, 1.75)));
+    chars.jun = kid('jun', { hair: '#1d1a19', shirt: '#2c3a5c', skin: '#f6d2b4', style: 'short', nb: -1, seed: .3 }, -.4, 0);
+    chars.sol = kid('sol', { hair: '#4a3426', shirt: '#5a3d3a', skin: '#f9dcc4', style: 'bob', tie: false, nb: 1, seed: 1.9 }, 1.4, 0);
+    [['#2e2420', '#3d4f3a', '#e2b08a', 'curly', -1.35], ['#6b4a33', '#2f4b5e', '#eec3a1', 'pony', .5], ['#151820', '#7a5a3a', '#d9a27c', 'twin', 2.35]].forEach(([hair, shirt, skin, style, x], i) =>
+      bgKids.push(kid('bg' + i, { hair, shirt, skin, style, tie: !i, nb: i ? -1 : 1, seed: 3 + i * 1.3 }, x, 1.75)));
     chars.mascot = makeMascot();
     chars.mascot.root.position.set(-1.45, 0, -2.9); chars.mascot.root.rotation.y = .25;
     scene.add(chars.mascot.root);
@@ -504,25 +597,25 @@ const V = (() => {
 
   /* ───────── 장면 정의 ───────── */
   const RIGHT = { x: 930, y: 160, w: 600, h: 290 }, TOP = { x: 330, y: 160, w: 1200, h: 136 };
-  const omrSvg = `<rect width="560" height="284" rx="14" fill="#fff"/>
-    <rect width="560" height="54" rx="14" fill="#fecaca"/><text x="24" y="36" font-size="26" font-weight="800" fill="#991b1b" font-family="sans-serif">OMR 답안지</text>
-    ${[['학년', 2], ['반', 3], ['번호', 15], ['과목코드', '03']].map(([k, v], i) => `<text x="${28 + i * 132}" y="96" font-size="22" font-weight="700" fill="#64748b" font-family="sans-serif">${k}</text>
-      <rect x="${28 + i * 132}" y="106" width="104" height="44" rx="8" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/>
-      <text x="${80 + i * 132}" y="137" font-size="28" font-weight="800" fill="#0f172a" text-anchor="middle" font-family="sans-serif">${v}</text>`).join('')}
-    ${[0, 1, 2].map(r => `<text x="34" y="${196 + r * 34}" font-size="22" font-weight="700" fill="#64748b" font-family="sans-serif">${r + 1}</text>` +
-      [0, 1, 2, 3, 4].map(c => `<ellipse cx="${90 + c * 50}" cy="${188 + r * 34}" rx="17" ry="11" fill="${(r === 0 && c === 2) || (r === 1 && c === 0) || (r === 2 && c === 3) ? '#0f172a' : '#fff'}" stroke="#ef4444" stroke-width="2.5"/>`).join('')).join('')}`;
-  const essaySvg = `<rect width="560" height="284" rx="14" fill="#fff"/>
-    <text x="28" y="48" font-size="26" font-weight="800" fill="#0f172a" font-family="sans-serif">[논술형 1] 풀이 과정을 쓰시오.</text>
-    ${[110, 170, 230].map(y => `<path d="M28 ${y}H532" stroke="#cbd5e1" stroke-width="2"/>`).join('')}
-    <g font-size="34" font-weight="600" fill="#1d4ed8" font-style="italic" font-family="sans-serif"><text x="36" y="100">2x + 4 = 14 이므로</text><text x="36" y="160">x =</text><text x="104" y="160">10</text></g>`;
-  const line = (id, sx, sy, len) => { const n = new T.Mesh(new T.PlaneGeometry(len * PX, 4.5 * PX), new T.MeshBasicMaterial({ color: '#1d4ed8' })); n.position.copy(b2w(sx + len / 2, sy, .03)); reg(id, n, { vis: false, len: len * PX }); };
+  const omrSvg = `<rect x="1" y="1" width="558" height="282" rx="4" fill="${PAPER}" stroke="${LINE}" stroke-width="2"/>
+    <rect x="1" y="1" width="558" height="54" fill="#f6dcd6"/><path d="M1 55H559" stroke="${RED}" stroke-width="2"/><text x="24" y="37" font-size="26" font-weight="800" fill="${RED}" font-family="sans-serif">OMR 답안지</text>
+    ${[['학년', 2], ['반', 3], ['번호', 15], ['과목코드', '03']].map(([k, v], i) => `<text x="${28 + i * 132}" y="96" font-size="22" font-weight="700" fill="#4e5770" font-family="sans-serif">${k}</text>
+      <rect x="${28 + i * 132}" y="106" width="104" height="44" rx="2" fill="${PAPER}" stroke="${RED}" stroke-width="2"/>
+      <text x="${80 + i * 132}" y="137" font-size="28" font-weight="800" fill="${NAVY}" text-anchor="middle" font-family="sans-serif">${v}</text>`).join('')}
+    ${[0, 1, 2].map(r => `<text x="34" y="${196 + r * 34}" font-size="22" font-weight="700" fill="#4e5770" font-family="sans-serif">${r + 1}</text>` +
+      [0, 1, 2, 3, 4].map(c => `<ellipse cx="${90 + c * 50}" cy="${188 + r * 34}" rx="17" ry="11" fill="${(r === 0 && c === 2) || (r === 1 && c === 0) || (r === 2 && c === 3) ? '#16161a' : PAPER}" stroke="${RED}" stroke-width="2.5"/>`).join('')).join('')}`;
+  const essaySvg = `<rect x="1" y="1" width="558" height="282" rx="4" fill="${PAPER}" stroke="${LINE}" stroke-width="2"/>
+    <text x="28" y="48" font-size="26" font-weight="800" fill="${NAVY}" font-family="sans-serif">[논술형 1] 풀이 과정을 쓰시오.</text>
+    ${[110, 170, 230].map(y => `<path d="M28 ${y}H532" stroke="#cfc5ad" stroke-width="2"/>`).join('')}
+    <g font-size="34" font-weight="600" fill="#2b4fa8" font-style="italic" font-family="sans-serif"><text x="36" y="100">2x + 4 = 14 이므로</text><text x="36" y="160">x =</text><text x="104" y="160">10</text></g>`;
+  const line = (id, sx, sy, len) => { const n = new T.Mesh(new T.PlaneGeometry(len * PX, 4.5 * PX), new T.MeshBasicMaterial({ color: '#2b4fa8' })); n.position.copy(b2w(sx + len / 2, sy, .03)); reg(id, n, { vis: false, len: len * PX }); };
   const DESK_Y = .79, FLOORP = [.5, 0, -1.05];
 
   const SC = {
     intro: { title: '', build(a) {
-        a.text('bt', '시험 보는 날', 130, 930, 215, '#ffffff');
-        a.text('bs', '이것만은 꼭!', 64, 930, 375, '#713f12', '#fde047');
-        a.svg('st1', K.emo('✨', 100), '-75 -75 150 150', 420, 150, 90, 90, false); a.svg('st2', K.emo('⭐', 100), '-75 -75 150 150', 1440, 380, 90, 90, false);
+        a.text('bt', '시험 보는 날', 130, 930, 215, '#f4f1e8');
+        a.text('bs', '이것만은 꼭!', 64, 930, 375, NAVY, '#f2b42c');
+        a.svg('st1', ICON['✨'], '-75 -75 150 150', 420, 150, 90, 90, false); a.svg('st2', ICON['⭐'], '-75 -75 150 150', 1440, 380, 70, 70, false);
       },
       beats: [{ cam: 'host', acts: [['mascot', 'jump arm-wave wave'], ['bt', 'pop', .2]] },
         { cam: 'wide', acts: [['mascot', '!wave arm-point'], ['bs', 'pop', .3], ['st1', 'pop', .7], ['st2', 'pop', 1.1], ['jun', 'arm-up', 2.6], ['sol', 'arm-up', 2.8], ['bg', 'arm-up', 3]] }] },
@@ -575,8 +668,8 @@ const V = (() => {
         { cam: 'kids', acts: [['jun', 'face-smile'], ['t3', 'pop', .3]] }] },
     omr: { title: '답안지 표기', init: { jun: 'writing look-d', sol: 'writing look-d', bg: 'writing look-d' }, build(a) {
         a.svg('omr', omrSvg, '0 0 560 284', 620, 306, 560, 284);
-        a.svg('hl', `<rect x="14" y="66" width="532" height="96" rx="14" fill="none" stroke="#f59e0b" stroke-width="9"/>`, '0 0 560 284', 620, 306, 560, 284, false, .02);
-        a.svg('ox', `<path d="M-20-15L20 15M20-15L-20 15" stroke="#fff" stroke-width="14" stroke-linecap="round"/><path d="M-20-15L20 15M20-15L-20 15" stroke="#ef4444" stroke-width="7" stroke-linecap="round"/>`, '-40 -40 80 80', 580, 420, 60, 60, false, .02);
+        a.svg('hl', `<rect x="14" y="66" width="532" height="96" rx="4" fill="none" stroke="#f2b42c" stroke-width="9"/>`, '0 0 560 284', 620, 306, 560, 284, false, .02);
+        a.svg('ox', `<path d="M-20-15L20 15M20-15L-20 15" stroke="#fff" stroke-width="14" stroke-linecap="round"/><path d="M-20-15L20 15M20-15L-20 15" stroke="#2b4fa8" stroke-width="7" stroke-linecap="round"/>`, '-40 -40 80 80', 580, 420, 60, 60, false, .02);
         a.svg('oxm', K.mark('x'), '-50 -50 100 100', 660, 412, 70, 70, false, .03);
         a.tiles([['signpen', '컴퓨터용\n사인펜', 'o'], ['penRed', '빨간 펜\n예비 표시', 'x'], ['tape', '수정테이프\n(각자 준비)', 'o'], ['❌', '× 표시로\n고치기', 'x']], 2, RIGHT, 26);
       },
@@ -587,7 +680,7 @@ const V = (() => {
     essay: { title: '논술형 답안', build(a) {
         a.svg('essay', essaySvg, '0 0 560 284', 620, 306, 560, 284);
         line('strike1', 438, 310, 56); line('strike2', 438, 320, 56);
-        a.text('fix', '5', 34, 530, 314, '#1d4ed8');
+        a.text('fix', '5', 34, 530, 314, '#2b4fa8');
         a.tiles([['penBlack', '흑색 볼펜', 'o'], ['penBlue', '청색 볼펜', 'o'], ['tape', '수정테이프\n사용 금지', 'x']], 2, RIGHT, 26);
       },
       beats: [{ cam: 'sol', acts: [['sol', 'arm-up face-o look-c'], ['jun', 'look-n']] },
@@ -607,9 +700,9 @@ const V = (() => {
         { cam: 'board', acts: [['h8', 'hide'], ['title', '그 밖에 감독 선생님이 판단하는 행동까지!'], ['jun', '!has-phone arm-rest face-shock look-c'], ['t9', 'pop', .8]] }] },
     outro: { title: '정직한 시험, 진짜 내 실력!', build(a) {
         a.tiles([['law', '부정행위는 학업성적관리규정에 따라 처리', null]], 1, TOP, 32);
-        a.text('fin', '모두 파이팅!', 72, 930, 380, '#713f12', '#fde047');
+        a.text('fin', '모두 파이팅!', 72, 930, 380, NAVY, '#f2b42c');
         const g = new T.Group(), cg = new T.PlaneGeometry(.09, .14);
-        for (let i = 0; i < 90; i++) g.add(new T.Mesh(cg, new T.MeshBasicMaterial({ color: ['#f43f5e', '#f59e0b', '#22c55e', '#38bdf8', '#a855f7'][i % 5], side: T.DoubleSide })));
+        for (let i = 0; i < 90; i++) g.add(new T.Mesh(cg, new T.MeshBasicMaterial({ color: ['#d6322b', '#f2b42c', '#1f2a44', '#fffdf7', '#2b4fa8'][i % 5], side: T.DoubleSide })));
         reg('confetti', g, { vis: false });
       },
       beats: [{ cam: 'board', acts: [['mascot', 'arm-point'], ['t0', 'pop', .3]] },
@@ -681,14 +774,14 @@ const V = (() => {
     ui.seek.value = t;
     ui.time.textContent = `${fmt(t)} / ${fmt(VIDEO_LEN)}`;
   }
-  function state() { ui.play.textContent = audio.paused ? '▶ 재생' : '⏸ 일시정지'; }
+  function state() { ui.play.textContent = audio.paused ? '▶ 재생' : '❚❚ 일시정지'; }
   function toggle() {
     if (failed) return;
     ui.end.hidden = true;
     if (audio.paused) audio.play().catch(() => { ui.text.textContent = '영상을 불러오지 못했어요. 새로고침해 주세요.'; });
     else audio.pause();
   }
-  function mute(m) { audio.muted = m; ui.sound.textContent = m ? '🔇 소리 꺼짐' : '🔊 소리 켜짐'; }
+  function mute(m) { audio.muted = m; ui.sound.textContent = m ? '소리 꺼짐' : '소리 켜짐'; }
   function resize() {
     const w = canvas.clientWidth, h = Math.round(w * 9 / 16);
     if (w) renderer.setSize(w, h, false);
@@ -716,20 +809,24 @@ const V = (() => {
       ui.text.textContent = '이 기기에서는 3D 영상을 볼 수 없어요. 다른 브라우저(크롬·엣지)로 열어 주세요.';
       return;
     }
-    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
     renderer.outputEncoding = T.sRGBEncoding;
+    renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
-    scene = new T.Scene(); scene.background = new T.Color('#fdf3dc');
+    scene = new T.Scene(); scene.background = new T.Color('#e9e1cf'); scene.fog = new T.Fog('#e9e1cf', 10, 20);
     camera = new T.PerspectiveCamera(35, 16 / 9, .1, 60);
     buildRoom(); buildCast();
     const st = { text: '' }, tex = canvasTex(2496, 180, ctx => {
-      ctx.font = `800 104px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fefce8';
+      ctx.font = `900 104px ${TFONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#f4f1e8';
       ctx.fillText(st.text, 1248, 94);
     });
     titleObj = { st, tex };
     const tp = plane(tex, BOARD.w, 90 * PX); tp.position.copy(b2w(930, 108, .012)); scene.add(tp);
     new ResizeObserver(resize).observe(canvas);
-    document.fonts?.load(`800 40px Pretendard`).then(() => { sceneIdx = -1; }).catch(() => {});   // 글꼴이 늦게 오면 카드를 다시 그린다
+    // 글꼴이 늦게 오면 카드를 다시 그린다(한글 웹폰트는 글자 묶음별로 나눠 받으므로 받을 때마다)
+    let rt; const reload = () => { clearTimeout(rt); rt = setTimeout(() => { sceneIdx = -1; }, 400); }; // ponytail: 글꼴 조각이 몰려 와도 한 번만 다시 그림
+    Promise.all([document.fonts?.load(`800 40px Hahmlet`, '시험'), document.fonts?.load(`700 40px "IBM Plex Sans KR"`, '시험')]).then(reload).catch(() => {});
+    document.fonts?.addEventListener?.('loadingdone', reload);
   }
   function open() {
     if (failed) return;
